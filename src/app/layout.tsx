@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     title: "AliOne — Privacy-First Digital Ecosystem",
     description:
       "One account. Total privacy. AliOne combines browsing, search, email, storage, and more into a single privacy-first ecosystem.",
-    url: "https://www.alione.cc",
+    url: "https://alione.cc",
     siteName: "AliOne",
     locale: "en_US",
     type: "website",

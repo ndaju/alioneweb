@@ -9,7 +9,7 @@ export default function Home() {
       {/* Navigation */}
       <nav className="nav" id="nav">
         <div className="nav-inner">
-          <a href="https://www.alione.cc" className="nav-logo">
+          <a href="https://alione.cc" className="nav-logo">
             <img src="/alione.png" alt="AliOne" className="logo-img" />
           </a>
           <div className="nav-links">
@@ -64,7 +64,7 @@ export default function Home() {
               Starting with AliBrowser — a privacy-first browser built with our community.
             </p>
             <div className="hero-actions reveal-up" style={{ animationDelay: "0.3s" }}>
-              <a href="https://www.alione.cc" className="btn btn-primary btn-lg">
+              <a href="https://alione.cc" className="btn btn-primary btn-lg">
                 Sign Up
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </a>
@@ -150,7 +150,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="spotlight-actions reveal-up" style={{ animationDelay: "0.25s" }}>
-                <a href="https://www.alione.cc" className="btn btn-primary btn-lg">
+                <a href="https://alione.cc" className="btn btn-primary btn-lg">
                   Sign Up
                 </a>
               </div>
@@ -666,7 +666,7 @@ export default function Home() {
         <div className="container">
           <div className="footer-grid">
             <div className="footer-brand">
-              <a href="https://www.alione.cc" className="nav-logo">
+              <a href="https://alione.cc" className="nav-logo">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/alione.png" alt="AliOne" className="logo-img" style={{ height: 28 }} />
               </a>
@@ -693,7 +693,7 @@ export default function Home() {
             </div>
             <div className="footer-col">
               <h4>Company</h4>
-              <a href="https://www.alione.cc">Home</a>
+              <a href="https://alione.cc">Home</a>
               <a href="#">About</a>
               <a href="#">Blog</a>
             </div>
