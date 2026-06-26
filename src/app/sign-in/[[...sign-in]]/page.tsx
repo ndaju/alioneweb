@@ -10,7 +10,7 @@ export default function SignInPage() {
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
       </div>
       <div className="relative z-10 flex flex-col items-center gap-6">
-        <a href="https://alione.cc">
+        <a href="https://www.alione.cc">
           <img src="/alione.png" alt="AliOne" className="w-14 h-14 rounded-xl" />
         </a>
         <SignIn
