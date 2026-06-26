@@ -1,6 +1,7 @@
 "use client";
 
-import { useAuth, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { useAuth, UserButton } from "@clerk/nextjs";
+import Link from "next/link";
 
 export function NavAuth() {
   const { isSignedIn } = useAuth();
@@ -19,12 +20,8 @@ export function NavAuth() {
 
   return (
     <>
-      <SignInButton mode="redirect">
-        <button className="nav-link nav-login">Sign In</button>
-      </SignInButton>
-      <SignUpButton mode="redirect">
-        <button className="btn btn-primary btn-sm">Sign Up</button>
-      </SignUpButton>
+      <Link href="/sign-in" className="nav-link nav-login">Sign In</Link>
+      <Link href="/sign-up" className="btn btn-primary btn-sm">Sign Up</Link>
     </>
   );
 }
@@ -46,12 +43,8 @@ export function MobileNavAuth() {
 
   return (
     <>
-      <SignInButton mode="redirect">
-        <button className="mobile-link">Sign In</button>
-      </SignInButton>
-      <SignUpButton mode="redirect">
-        <button className="btn btn-primary">Sign Up</button>
-      </SignUpButton>
+      <Link href="/sign-in" className="mobile-link">Sign In</Link>
+      <Link href="/sign-up" className="btn btn-primary">Sign Up</Link>
     </>
   );
 }
