@@ -1,31 +1,29 @@
 import { SignUp } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
 
 export default function SignUpPage() {
   const appearance = {
-    baseTheme: dark,
+    variables: {
+      colorBackground: "#0a0a0a",
+      colorText: "#ffffff",
+      colorTextSecondary: "rgba(255,255,255,0.5)",
+      colorInputBackground: "rgba(255,255,255,0.05)",
+      colorInputBorder: "rgba(255,255,255,0.1)",
+      colorPrimary: "#ffffff",
+      colorTextOnPrimary: "#000000",
+      colorDanger: "#f87171",
+    },
     elements: {
       rootBox: "mx-auto",
-      card: "bg-[#0a0a0a] border border-white/[0.06] shadow-2xl shadow-black/50 rounded-2xl",
-      headerTitle: "text-white font-outfit text-2xl",
-      headerSubtitle: "text-white/50",
+      card: "border border-white/[0.06] shadow-2xl shadow-black/50 rounded-2xl",
+      headerTitle: "font-outfit text-2xl",
       formButtonPrimary:
-        "bg-white text-black hover:bg-white/90 rounded-xl py-2.5 text-sm font-medium normal-case shadow-none",
+        "rounded-xl py-2.5 text-sm font-medium normal-case shadow-none hover:opacity-90",
       formFieldInput:
-        "bg-white/5 border-white/10 text-white rounded-xl py-2.5 px-4 text-sm placeholder:text-white/30 focus:border-white/20 focus:ring-0",
-      formFieldLabel: "text-white/60 text-sm font-normal",
-      footerActionLink: "text-white hover:text-white/80",
-      footerActionText: "text-white/40",
-      dividerLine: "bg-white/10",
-      dividerText: "text-white/30",
-      socialButtonsBlockButton:
-        "bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-xl",
-      socialButtonsBlockButtonText: "text-white",
-      formResendCodeLink: "text-white hover:text-white/80",
-      alert: "bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl",
-      identityPreviewEditButton: "text-white hover:text-white/80",
-      otpCodeFieldInput:
-        "bg-white/5 border-white/10 text-white rounded-xl focus:border-white/20",
+        "rounded-xl py-2.5 px-4 text-sm focus:ring-0",
+      formFieldLabel: "text-sm font-normal",
+      socialButtonsBlockButton: "rounded-xl hover:opacity-90",
+      alert: "rounded-xl",
+      otpCodeFieldInput: "rounded-xl",
     },
   };
 
