@@ -1,7 +1,6 @@
 "use client";
 
-import { useAuth, UserButton } from "@clerk/nextjs";
-import Link from "next/link";
+import { useAuth, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
 
 const userButtonAppearance = {
   variables: {
@@ -37,8 +36,12 @@ export function NavAuth() {
 
   return (
     <>
-      <Link href="/sign-in" className="nav-link nav-login">Sign In</Link>
-      <Link href="/sign-up" className="btn btn-primary btn-sm">Sign Up</Link>
+      <SignInButton mode="redirect">
+        <button className="nav-link nav-login">Sign In</button>
+      </SignInButton>
+      <SignUpButton mode="redirect">
+        <button className="btn btn-primary btn-sm">Sign Up</button>
+      </SignUpButton>
     </>
   );
 }
@@ -52,8 +55,12 @@ export function MobileNavAuth() {
 
   return (
     <>
-      <Link href="/sign-in" className="mobile-link">Sign In</Link>
-      <Link href="/sign-up" className="btn btn-primary">Sign Up</Link>
+      <SignInButton mode="redirect">
+        <button className="mobile-link">Sign In</button>
+      </SignInButton>
+      <SignUpButton mode="redirect">
+        <button className="btn btn-primary">Sign Up</button>
+      </SignUpButton>
     </>
   );
 }
