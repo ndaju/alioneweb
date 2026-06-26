@@ -1,9 +1,28 @@
 "use client";
-import { SignUp } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
+import dynamic from "next/dynamic";
+
+const SignUp = dynamic(
+  () => import("@clerk/nextjs").then((mod) => mod.SignUp),
+  { ssr: false }
+);
 
 const clerkAppearance = {
-  baseTheme: dark,
+  variables: {
+    colorBackground: "#0a0a0a",
+    colorNeutral: "#ffffff",
+    colorPrimary: "#ffffff",
+    colorPrimaryForeground: "#000000",
+    colorForeground: "#ffffff",
+    colorInputForeground: "#ffffff",
+    colorInput: "rgba(255,255,255,0.05)",
+    colorBorder: "rgba(255,255,255,0.1)",
+    colorText: "#ffffff",
+    colorTextSecondary: "rgba(255,255,255,0.5)",
+    colorDanger: "#f87171",
+    colorSuccess: "#34d399",
+    colorWarning: "#fbbf24",
+    borderRadius: "0.75rem",
+  },
   elements: {
     rootBox: "mx-auto",
     card: "bg-[#0a0a0a] border border-white/[0.06] shadow-2xl shadow-black/50 rounded-2xl",
