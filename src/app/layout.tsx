@@ -56,7 +56,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable} ${plusJakarta.variable}`}>
       <body>
-        <ClerkProvider>
+        <ClerkProvider proxyUrl="/__clerk">
           {children}
         </ClerkProvider>
       </body>
