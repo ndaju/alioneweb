@@ -1,10 +1,5 @@
 "use client";
-import dynamic from "next/dynamic";
-
-const SignUp = dynamic(
-  () => import("@clerk/nextjs").then((mod) => mod.SignUp),
-  { ssr: false }
-);
+import { SignUp } from "@clerk/nextjs";
 
 const clerkAppearance = {
   variables: {
