@@ -28,11 +28,7 @@ const userButtonAppearance = {
 };
 
 export function NavAuth() {
-  const { isSignedIn, isLoaded } = useAuth();
-
-  if (!isLoaded) {
-    return <div className="w-20 h-8" />;
-  }
+  const { isSignedIn } = useAuth();
 
   if (isSignedIn) {
     return <UserButton appearance={userButtonAppearance as any} />;
@@ -47,11 +43,7 @@ export function NavAuth() {
 }
 
 export function MobileNavAuth() {
-  const { isSignedIn, isLoaded } = useAuth();
-
-  if (!isLoaded) {
-    return <div className="w-20 h-10" />;
-  }
+  const { isSignedIn } = useAuth();
 
   if (isSignedIn) {
     return <UserButton appearance={userButtonAppearance as any} />;
