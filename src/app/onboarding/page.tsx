@@ -1,11 +1,17 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { NavAuth, MobileNavAuth } from "@/components/NavAuth";
 import ScrollReveal from "@/components/ScrollReveal";
 
 export default async function OnboardingPage() {
-  const user = await currentUser();
-  if (!user) redirect("/sign-in");
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in");
+
+  let firstName = "";
+  try {
+    const user = await currentUser();
+    firstName = user?.firstName ?? "";
+  } catch {}
 
   return (
     <ScrollReveal>
@@ -32,7 +38,7 @@ export default async function OnboardingPage() {
               Welcome to AliOne
             </h1>
             <p className="text-white/50 text-lg mb-8">
-              Your account is ready{user.firstName ? `, ${user.firstName}` : ""}.
+              Your account is ready{firstName ? `, ${firstName}` : ""}.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
               {[

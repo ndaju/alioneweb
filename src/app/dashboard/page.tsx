@@ -1,11 +1,19 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { NavAuth, MobileNavAuth } from "@/components/NavAuth";
 import ScrollReveal from "@/components/ScrollReveal";
 
 export default async function DashboardPage() {
-  const user = await currentUser();
-  if (!user) redirect("/sign-in");
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in");
+
+  let firstName = "";
+  let email = "";
+  try {
+    const user = await currentUser();
+    firstName = user?.firstName ?? "";
+    email = user?.emailAddresses?.[0]?.emailAddress ?? "";
+  } catch {}
 
   return (
     <ScrollReveal>
@@ -29,10 +37,10 @@ export default async function DashboardPage() {
               <img src="/alione.png" alt="AliOne" className="w-8 h-8" />
             </div>
             <h1 className="text-4xl md:text-5xl font-outfit font-bold text-white mb-4">
-              Welcome back{user.firstName ? `, ${user.firstName}` : ""}
+              Welcome back{firstName ? `, ${firstName}` : ""}
             </h1>
             <p className="text-white/50 text-lg mb-2">
-              Signed in as {user.emailAddresses?.[0]?.emailAddress ?? user.id}
+              {email ? `Signed in as ${email}` : "Signed in"}
             </p>
             <p className="text-white/30 text-sm">
               Your AliOne dashboard is coming soon.
