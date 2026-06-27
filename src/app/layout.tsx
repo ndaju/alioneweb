@@ -43,9 +43,10 @@ export const metadata: Metadata = {
     description:
       "One account. Total privacy. Privacy-first software built with our community.",
   },
-  icons: {
-    icon: "/alione.png",
-  },
+  icons: [
+    { rel: "icon", url: "/alione.png", type: "image/png", sizes: "256x256" },
+    { rel: "shortcut icon", url: "/alione.png", type: "image/png" },
+  ],
 };
 
 export default function RootLayout({
