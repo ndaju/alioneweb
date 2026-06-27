@@ -64,12 +64,12 @@ export default function Home() {
               Starting with AliBrowser — a privacy-first browser built with our community.
             </p>
             <div className="hero-actions reveal-up" style={{ animationDelay: "0.3s" }}>
-              <a href="https://alione.cc" className="btn btn-primary btn-lg">
-                Sign Up
+              <a href="/sign-up" className="btn btn-primary btn-lg">
+                Get Started
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12L10 8L6 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </a>
-              <a href="#ecosystem" className="btn btn-secondary btn-lg">
-                Explore the Ecosystem
+              <a href="/sign-up" className="btn btn-secondary btn-lg">
+                Sign Up
               </a>
             </div>
             <div className="hero-stats reveal-up" style={{ animationDelay: "0.4s" }}>
