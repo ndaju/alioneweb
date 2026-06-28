@@ -247,15 +247,16 @@ export default function Home() {
               </div>
             </a>
 
-            {/* AliSearch — Coming Soon */}
-            <div className="product-card product-card-soon reveal-up" style={{ animationDelay: "0.1s" }} data-product="search">
+            {/* AliSearch — Incoming */}
+            <a href="https://alisearch.alione.cc" className="product-card product-card-soon reveal-up" style={{ animationDelay: "0.1s" }} data-product="search">
               <div className="product-card-glow"></div>
               <div className="product-card-inner">
                 <div className="product-card-header">
                   <div className="product-icon product-icon-search">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="14" cy="14" r="10" stroke="currentColor" strokeWidth="1.5"/><line x1="22" y1="22" x2="29" y2="29" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/alisearch-logo.png" alt="AliSearch" style={{ width: 32, height: 32, borderRadius: 6, objectFit: "contain" }} />
                   </div>
-                  <span className="product-status product-status-soon">Coming Soon</span>
+                  <span className="product-status product-status-soon">Incoming</span>
                 </div>
                 <h3 className="product-name">AliSearch</h3>
                 <p className="product-desc">Anonymous search engine. No profiling. No tracking. Just results.</p>
@@ -280,7 +281,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </div>
+            </a>
 
             {/* AliOne — Coming Soon */}
             <div className="product-card product-card-soon reveal-up" style={{ animationDelay: "0.15s" }} data-product="one">
