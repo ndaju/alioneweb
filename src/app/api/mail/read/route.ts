@@ -30,6 +30,7 @@ export async function GET(req: Request) {
       secure: false,
       auth: { user: email, pass: password },
       logger: false,
+      tls: { rejectUnauthorized: false },
     });
 
     await imap.connect();
