@@ -1,5 +1,5 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { ImapFlow } from "imapflow";
+import { ImapFlow, type FetchMessageObject } from "imapflow";
 import { simpleParser } from "mailparser";
 
 export async function GET(req: Request) {
@@ -38,11 +38,16 @@ export async function GET(req: Request) {
     lock.release();
     await imap.logout();
 
-    if (!msg?.source) {
+    if (!msg) {
       return Response.json({ error: "Email not found" }, { status: 404 });
     }
 
-    const parsed = await simpleParser(msg.source);
+    const source = (msg as FetchMessageObject).source;
+    if (!source) {
+      return Response.json({ error: "Email not found" }, { status: 404 });
+    }
+
+    const parsed = await simpleParser(source);
 
     return Response.json({
       from: parsed.from?.text || "",
