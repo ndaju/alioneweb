@@ -35,7 +35,7 @@ export async function GET() {
         from: msg.envelope.from?.[0]?.address || "unknown",
         subject: msg.envelope.subject || "(no subject)",
         date: msg.envelope.date?.toISOString() || "",
-        seen: (msg.flags || []).includes("\\Seen"),
+        seen: msg.flags ? msg.flags.has("\\Seen") : true,
       });
     }
 
