@@ -28,14 +28,14 @@ export async function GET() {
     const lock = await imap.getMailboxLock("INBOX");
 
     const messages: any[] = [];
-    for await (const msg of imap.fetch("1:*", { envelope: true, uid: true })) {
+    for await (const msg of imap.fetch("1:*", { envelope: true, uid: true, flags: true })) {
       if (!msg.envelope) continue;
       messages.push({
         id: msg.uid,
         from: msg.envelope.from?.[0]?.address || "unknown",
         subject: msg.envelope.subject || "(no subject)",
         date: msg.envelope.date?.toISOString() || "",
-        seen: (msg.envelope.flags || []).includes("\\Seen"),
+        seen: (msg.flags || []).includes("\\Seen"),
       });
     }
 
