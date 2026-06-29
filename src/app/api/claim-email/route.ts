@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     const client = await clerkClient();
     await client.users.updateUser(userId, {
-      publicMetadata: { claimedEmail: email },
+      publicMetadata: { claimedEmail: email, claimedPassword: password },
     });
 
     return Response.json({ success: true, email });

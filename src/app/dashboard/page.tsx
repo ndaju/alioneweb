@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth, useUser, UserButton } from "@clerk/nextjs";
 import {
   Inbox,
@@ -17,6 +17,7 @@ import {
   Loader2,
   CheckCircle2,
   Mail,
+  ExternalLink,
 } from "lucide-react";
 
 type Email = {
@@ -31,20 +32,12 @@ type Email = {
   hasAttachments: boolean;
 };
 
-const MOCK_EMAILS: Email[] = [
-  { id: 1, from: "AliOne Team", subject: "Welcome to AliOne Mail!", preview: "We're excited to have you onboard. Your privacy-first email experience starts now.", body: "We're excited to have you onboard. Your privacy-first email experience starts now.\n\nAliOne Mail is built with end-to-end encryption, no tracking, no ads.\n\nGet started:\n- Download AliBrowser\n- Configure your mail clients\n- Explore the dashboard\n\n– The AliOne Team", date: "2m ago", starred: false, unread: true, hasAttachments: false },
-  { id: 2, from: "AliBrowser Updates", subject: "New vertical tabs in v2.1", preview: "Check out the latest improvements to vertical tabs and workspace management.", body: "Check out the latest improvements to vertical tabs and workspace management.\n\nWhat's new:\n- Improved tab groups\n- Workspace sync\n- Performance updates\n\nUpdate now!", date: "1h ago", starred: true, unread: true, hasAttachments: false },
-  { id: 3, from: "Privacy Digest", subject: "Weekly privacy newsletter", preview: "This week: new encryption standards, tracker blocking updates, and more.", body: "This week in privacy:\n\n1. New E2E encryption standards proposed\n2. Tracker blocking gets smarter\n3. Privacy-first browsers gain market share\n\nStay safe out there.", date: "3h ago", starred: false, unread: false, hasAttachments: true },
-  { id: 4, from: "Cloudflare", subject: "Your DNS changes are live", preview: "The DNS changes for alione.cc have been propagated successfully.", body: "The DNS changes for alione.cc have been propagated successfully.\n\nAll records are now active across all Cloudflare edge locations.", date: "1d ago", starred: false, unread: false, hasAttachments: false },
-  { id: 5, from: "GitHub", subject: "[ndaju/alioneweb] Push event to master", preview: "A new commit was pushed to master by ndaju.", body: "Repository: ndaju/alioneweb\nBranch: master\n\nLatest commit: Update dashboard with email management\n\nView on GitHub: https://github.com/ndaju/alioneweb", date: "2d ago", starred: true, unread: false, hasAttachments: false },
-];
-
 type NavItem = "inbox" | "sent" | "drafts" | "settings";
 
 const NAV_ITEMS: { key: NavItem; label: string; icon: any; count?: number }[] = [
-  { key: "inbox", label: "Inbox", icon: Inbox, count: 2 },
+  { key: "inbox", label: "Inbox", icon: Inbox },
   { key: "sent", label: "Sent", icon: Send },
-  { key: "drafts", label: "Drafts", icon: FileText, count: 1 },
+  { key: "drafts", label: "Drafts", icon: FileText },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -62,11 +55,70 @@ export default function DashboardPage() {
 
   const [username, setUsername] = useState("");
   const [domain, setDomain] = useState("alione.cc");
-  const [password, setPassword] = useState("");
+  const [password1, setPassword1] = useState("");
+
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [loadingEmails, setLoadingEmails] = useState(true);
+  const [emailError, setEmailError] = useState("");
+  const [loadingBody, setLoadingBody] = useState(false);
 
   const metadataEmail = user?.publicMetadata?.claimedEmail as string | undefined;
   const resolvedEmail = claimedEmail || metadataEmail || null;
   const showClaimForm = (!resolvedEmail || forceClaimForm) && !claimSuccess;
+
+  const fetchEmails = useCallback(async () => {
+    setLoadingEmails(true);
+    setEmailError("");
+    try {
+      const res = await fetch("/api/mail/list");
+      const data = await res.json();
+      if (data.emails) {
+        setEmails(
+          data.emails.map((e: any) => ({
+            id: e.id,
+            from: e.from,
+            subject: e.subject,
+            preview: e.subject,
+            body: "",
+            date: formatRelativeTime(e.date),
+            starred: false,
+            unread: !e.seen,
+            hasAttachments: false,
+          }))
+        );
+      } else if (data.error) {
+        setEmailError(data.error);
+      }
+    } catch {
+      setEmailError("Connection error");
+    } finally {
+      setLoadingEmails(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (resolvedEmail && userLoaded) {
+      fetchEmails();
+    }
+  }, [resolvedEmail, userLoaded, fetchEmails]);
+
+  useEffect(() => {
+    if (!selectedEmail || !userLoaded || !resolvedEmail) return;
+    setLoadingBody(true);
+    fetch(`/api/mail/read?uid=${selectedEmail}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.body) {
+          setEmails((prev) =>
+            prev.map((e) =>
+              e.id === selectedEmail ? { ...e, body: data.body, preview: data.subject } : e
+            )
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingBody(false));
+  }, [selectedEmail, userLoaded, resolvedEmail]);
 
   if (!isSignedIn) return null;
   if (!userLoaded) {
@@ -77,11 +129,10 @@ export default function DashboardPage() {
     );
   }
 
-  const emails = MOCK_EMAILS;
   const selected = emails.find((e) => e.id === selectedEmail);
 
   const handleClaim = async () => {
-    if (!username || !password) return;
+    if (!username || !password1) return;
     setClaiming(true);
     setClaimError("");
     setClaimSuccess(false);
@@ -89,7 +140,7 @@ export default function DashboardPage() {
       const res = await fetch("/api/claim-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, domain, password }),
+        body: JSON.stringify({ username, domain, password: password1 }),
       });
       const data = await res.json();
       if (data.success) {
@@ -154,8 +205,8 @@ export default function DashboardPage() {
                 <input
                   type="password"
                   placeholder="Choose a strong password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={password1}
+                  onChange={(e) => setPassword1(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/20"
                 />
               </div>
@@ -166,7 +217,7 @@ export default function DashboardPage() {
 
               <button
                 onClick={handleClaim}
-                disabled={claiming || claimSuccess || !username || !password}
+                disabled={claiming || claimSuccess || !username || !password1}
                 className={`w-full font-medium rounded-xl py-3 transition flex items-center justify-center gap-2 ${
                   claimSuccess
                     ? "bg-green-500 text-white"
@@ -190,7 +241,7 @@ export default function DashboardPage() {
 
               {claimSuccess && (
                 <p className="text-green-400 text-sm text-center animate-pulse">
-                  ✓ {claimedEmail} is yours!
+                  ✓ {resolvedEmail} is yours!
                 </p>
               )}
             </div>
@@ -238,11 +289,6 @@ export default function DashboardPage() {
               {!sidebarCollapsed && (
                 <>
                   <span className="flex-1 text-left">{item.label}</span>
-                  {item.count && (
-                    <span className="text-xs bg-white/10 text-white/60 px-1.5 py-0.5 rounded-full">
-                      {item.count}
-                    </span>
-                  )}
                 </>
               )}
             </button>
@@ -271,18 +317,44 @@ export default function DashboardPage() {
         {/* Top Bar */}
         <div className="h-14 border-b border-white/[0.06] flex items-center px-6 gap-4 flex-shrink-0">
           <span className="text-sm font-medium text-white/60 capitalize">{activeNav}</span>
-          <button
-            onClick={() => setForceClaimForm(true)}
-            className="ml-auto text-xs text-white/30 hover:text-white/60 underline underline-offset-2 transition"
-          >
-            Change email
-          </button>
+          <div className="ml-auto flex items-center gap-3">
+            <a
+              href="https://alimail.alione.cc"
+              target="_blank"
+              className="text-xs text-white/30 hover:text-white/60 flex items-center gap-1.5 transition"
+            >
+              <ExternalLink size={12} />
+              Full webmail
+            </a>
+            <button
+              onClick={() => setForceClaimForm(true)}
+              className="text-xs text-white/30 hover:text-white/60 underline underline-offset-2 transition"
+            >
+              Change email
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 flex min-h-0">
           {/* Email List */}
           <div className="w-[380px] border-r border-white/[0.06] flex flex-col flex-shrink-0 overflow-y-auto">
-            {emails.length === 0 ? (
+            {loadingEmails ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loader2 size={20} className="animate-spin text-white/30" />
+              </div>
+            ) : emailError ? (
+              <div className="flex-1 flex items-center justify-center text-white/20 px-6">
+                <div className="text-center">
+                  <p className="text-sm text-red-400/60">{emailError}</p>
+                  <button
+                    onClick={fetchEmails}
+                    className="text-xs text-white/30 hover:text-white/60 mt-3 underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ) : emails.length === 0 ? (
               <div className="flex-1 flex items-center justify-center text-white/20">
                 <div className="text-center px-6">
                   <Mail size={32} className="mx-auto mb-3 opacity-30" />
@@ -329,11 +401,15 @@ export default function DashboardPage() {
 
           {/* Email Reader */}
           <div className="flex-1 flex flex-col overflow-y-auto">
-            {selected ? (
+            {selected && loadingBody ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loader2 size={20} className="animate-spin text-white/30" />
+              </div>
+            ) : selected && selected.body ? (
               <div className="p-8 max-w-3xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-sm font-semibold">
-                    {selected.from[0]}
+                    {selected.from[0]?.toUpperCase() || "?"}
                   </div>
                   <div className="flex-1">
                     <h2 className="font-outfit font-semibold text-lg text-white">
@@ -343,10 +419,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button className="p-2 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition">
-                      <Star
-                        size={16}
-                        className={selected.starred ? "fill-yellow-400 text-yellow-400" : ""}
-                      />
+                      <Star size={16} />
                     </button>
                     <button className="p-2 rounded-lg hover:bg-white/5 text-white/30 hover:text-white/60 transition">
                       <Reply size={16} />
@@ -373,4 +446,18 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+function formatRelativeTime(dateStr: string): string {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
