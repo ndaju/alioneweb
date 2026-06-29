@@ -30,4 +30,12 @@ Consider adding this file to `.gitignore` and keeping only a `.gitkeep`.
 - Docker socket at `/var/run/docker.sock` is mounted into the nextjs container for `docker exec mailserver setup email add`
 - Docker CLI installed in runner stage via `apk add docker-cli` with GID 998 matching host docker group
 - The standalone output lives at `/app/` in the container (not `/app/.next/standalone/`)
+
+## Docker Inter-Container Networking
+**IMPORTANT**: fail2ban inside the mailserver container bans container IPs that fail IMAP login too many times. This causes TCP connections between containers to timeout (ICMP still works because fail2ban only blocks TCP).
+
+**Fix**: Add the Docker bridge subnet to fail2ban's `ignoreip`:
+- Config file: `docker-mailserver/config/fail2ban-jail.cf` (persists across restarts)
+- Manual: `docker exec mailserver sh -c 'sed -i "s|ignoreip = 127.0.0.1/8|ignoreip = 127.0.0.1/8 172.18.0.0/16|" /etc/fail2ban/jail.local; fail2ban-client reload'`
+- To unban: `docker exec mailserver sh -c 'fail2ban-client unban --all; nft flush table inet f2b-table'`
 <!-- END:aliome-crucial-context -->
