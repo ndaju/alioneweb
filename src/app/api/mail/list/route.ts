@@ -43,7 +43,10 @@ export async function GET() {
     await imap.logout();
 
     return Response.json({ emails: messages.reverse().slice(0, 50) });
-  } catch {
-    return Response.json({ error: "Failed to fetch emails" }, { status: 500 });
+  } catch (err: any) {
+    return Response.json(
+      { error: err.message || "Failed to fetch emails" },
+      { status: 500 }
+    );
   }
 }
