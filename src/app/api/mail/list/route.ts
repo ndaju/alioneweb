@@ -26,21 +26,26 @@ export async function GET() {
     });
 
     await imap.connect();
-    const lock = await imap.getMailboxLock("INBOX");
+    const status = await imap.status("INBOX", { messages: true });
+    const total = status.messages || 0;
 
     const messages: any[] = [];
-    for await (const msg of imap.fetch("1:*", { envelope: true, uid: true, flags: true })) {
-      if (!msg.envelope) continue;
-      messages.push({
-        id: msg.uid,
-        from: msg.envelope.from?.[0]?.address || "unknown",
-        subject: msg.envelope.subject || "(no subject)",
-        date: msg.envelope.date?.toISOString() || "",
-        seen: msg.flags ? msg.flags.has("\\Seen") : true,
-      });
+    if (total > 0) {
+      const lock = await imap.getMailboxLock("INBOX");
+      const fetchOpts = { envelope: true, uid: true, flags: true };
+      for await (const msg of imap.fetch(`1:${total}`, fetchOpts)) {
+        if (!msg.envelope) continue;
+        messages.push({
+          id: msg.uid,
+          from: msg.envelope.from?.[0]?.address || "unknown",
+          subject: msg.envelope.subject || "(no subject)",
+          date: msg.envelope.date?.toISOString() || "",
+          seen: msg.flags ? msg.flags.has("\\Seen") : true,
+        });
+      }
+      lock.release();
     }
 
-    lock.release();
     await imap.logout();
 
     return Response.json({ emails: messages.reverse().slice(0, 50) });
