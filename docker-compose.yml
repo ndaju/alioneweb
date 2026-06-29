@@ -43,7 +43,19 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
+  webmail:
+    image: snappymail/snappymail:latest
+    container_name: alione-webmail
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - snappymail-data:/var/lib/snappymail
+    depends_on:
+      - mailserver
+
 volumes:
   maildata:
   mailstate:
   maillogs:
+  snappymail-data:

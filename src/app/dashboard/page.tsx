@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { useState, useEffect } from "react";
+import { useAuth, useUser, UserButton } from "@clerk/nextjs";
 import {
   Inbox,
   Send,
@@ -14,6 +14,9 @@ import {
   Trash2,
   Reply,
   Sparkles,
+  Loader2,
+  CheckCircle2,
+  Mail,
 } from "lucide-react";
 
 type Email = {
@@ -46,20 +49,33 @@ const NAV_ITEMS: { key: NavItem; label: string; icon: any; count?: number }[] = 
 ];
 
 export default function DashboardPage() {
-  const { isSignedIn, userId } = useAuth();
+  const { isSignedIn } = useAuth();
+  const { user, isLoaded: userLoaded } = useUser();
   const [activeNav, setActiveNav] = useState<NavItem>("inbox");
   const [selectedEmail, setSelectedEmail] = useState<number | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [claimedEmail, setClaimedEmail] = useState<string | null>(null);
-  const [showClaimForm, setShowClaimForm] = useState(!claimedEmail);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState("");
+  const [claimSuccess, setClaimSuccess] = useState(false);
+  const [forceClaimForm, setForceClaimForm] = useState(false);
 
   const [username, setUsername] = useState("");
   const [domain, setDomain] = useState("alione.cc");
   const [password, setPassword] = useState("");
-  const [claiming, setClaiming] = useState(false);
-  const [claimError, setClaimError] = useState("");
+
+  const metadataEmail = user?.publicMetadata?.claimedEmail as string | undefined;
+  const resolvedEmail = claimedEmail || metadataEmail || null;
+  const showClaimForm = (!resolvedEmail || forceClaimForm) && !claimSuccess;
 
   if (!isSignedIn) return null;
+  if (!userLoaded) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-white/40" />
+      </div>
+    );
+  }
 
   const emails = MOCK_EMAILS;
   const selected = emails.find((e) => e.id === selectedEmail);
@@ -68,6 +84,7 @@ export default function DashboardPage() {
     if (!username || !password) return;
     setClaiming(true);
     setClaimError("");
+    setClaimSuccess(false);
     try {
       const res = await fetch("/api/claim-email", {
         method: "POST",
@@ -77,7 +94,8 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.success) {
         setClaimedEmail(data.email);
-        setShowClaimForm(false);
+        setClaimSuccess(true);
+        setForceClaimForm(false);
       } else {
         setClaimError(data.error || "Failed to claim email");
       }
@@ -98,7 +116,7 @@ export default function DashboardPage() {
                 <img src="/alione.png" alt="AliOne" className="w-8 h-8 rounded-lg" />
               </a>
               <span className="text-xl font-outfit font-semibold text-white">
-                {claimedEmail || "AliOne Mail"}
+                {resolvedEmail || "AliOne Mail"}
               </span>
             </div>
 
@@ -148,14 +166,30 @@ export default function DashboardPage() {
 
               <button
                 onClick={handleClaim}
-                disabled={claiming || !username || !password}
-                className="w-full bg-white text-black font-medium rounded-xl py-3 hover:bg-white/90 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={claiming || claimSuccess || !username || !password}
+                className={`w-full font-medium rounded-xl py-3 transition flex items-center justify-center gap-2 ${
+                  claimSuccess
+                    ? "bg-green-500 text-white"
+                    : "bg-white text-black hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed"
+                }`}
               >
-                {claiming ? "Creating..." : "Claim Email"}
+                {claiming ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Creating...
+                  </>
+                ) : claimSuccess ? (
+                  <>
+                    <CheckCircle2 size={16} />
+                    Claimed!
+                  </>
+                ) : (
+                  "Claim Email"
+                )}
               </button>
 
-              {claimedEmail && (
-                <p className="text-green-400 text-sm text-center">
+              {claimSuccess && (
+                <p className="text-green-400 text-sm text-center animate-pulse">
                   ✓ {claimedEmail} is yours!
                 </p>
               )}
@@ -218,7 +252,7 @@ export default function DashboardPage() {
         <div className="p-3 border-t border-white/[0.06]">
           {!sidebarCollapsed && (
             <div className="text-xs text-white/30 mb-2 truncate">
-              {claimedEmail}
+              {resolvedEmail}
             </div>
           )}
           <div className={sidebarCollapsed ? "flex justify-center" : ""}>
@@ -238,7 +272,7 @@ export default function DashboardPage() {
         <div className="h-14 border-b border-white/[0.06] flex items-center px-6 gap-4 flex-shrink-0">
           <span className="text-sm font-medium text-white/60 capitalize">{activeNav}</span>
           <button
-            onClick={() => setShowClaimForm(true)}
+            onClick={() => setForceClaimForm(true)}
             className="ml-auto text-xs text-white/30 hover:text-white/60 underline underline-offset-2 transition"
           >
             Change email
@@ -248,39 +282,49 @@ export default function DashboardPage() {
         <div className="flex-1 flex min-h-0">
           {/* Email List */}
           <div className="w-[380px] border-r border-white/[0.06] flex flex-col flex-shrink-0 overflow-y-auto">
-            {emails.map((email) => (
-              <button
-                key={email.id}
-                onClick={() => setSelectedEmail(email.id)}
-                className={`text-left px-5 py-4 border-b border-white/[0.04] hover:bg-white/[0.02] transition group ${
-                  selectedEmail === email.id ? "bg-white/[0.03]" : ""
-                } ${email.unread ? "bg-white/[0.01]" : ""}`}
-              >
-                <div className="flex items-start justify-between mb-1">
-                  <span
-                    className={`text-sm ${
-                      email.unread ? "font-semibold text-white" : "text-white/70"
+            {emails.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-white/20">
+                <div className="text-center px-6">
+                  <Mail size={32} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No emails yet</p>
+                  <p className="text-xs text-white/20 mt-1">Your inbox is empty</p>
+                </div>
+              </div>
+            ) : (
+              emails.map((email) => (
+                <button
+                  key={email.id}
+                  onClick={() => setSelectedEmail(email.id)}
+                  className={`text-left px-5 py-4 border-b border-white/[0.04] hover:bg-white/[0.02] transition group ${
+                    selectedEmail === email.id ? "bg-white/[0.03]" : ""
+                  } ${email.unread ? "bg-white/[0.01]" : ""}`}
+                >
+                  <div className="flex items-start justify-between mb-1">
+                    <span
+                      className={`text-sm ${
+                        email.unread ? "font-semibold text-white" : "text-white/70"
+                      }`}
+                    >
+                      {email.from}
+                    </span>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                      {email.hasAttachments && (
+                        <Paperclip size={12} className="text-white/20" />
+                      )}
+                      <span className="text-[11px] text-white/30">{email.date}</span>
+                    </div>
+                  </div>
+                  <p
+                    className={`text-sm truncate mb-0.5 ${
+                      email.unread ? "font-medium text-white/80" : "text-white/50"
                     }`}
                   >
-                    {email.from}
-                  </span>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                    {email.hasAttachments && (
-                      <Paperclip size={12} className="text-white/20" />
-                    )}
-                    <span className="text-[11px] text-white/30">{email.date}</span>
-                  </div>
-                </div>
-                <p
-                  className={`text-sm truncate mb-0.5 ${
-                    email.unread ? "font-medium text-white/80" : "text-white/50"
-                  }`}
-                >
-                  {email.subject}
-                </p>
-                <p className="text-xs text-white/30 truncate">{email.preview}</p>
-              </button>
-            ))}
+                    {email.subject}
+                  </p>
+                  <p className="text-xs text-white/30 truncate">{email.preview}</p>
+                </button>
+              ))
+            )}
           </div>
 
           {/* Email Reader */}
