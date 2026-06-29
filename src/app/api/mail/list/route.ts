@@ -29,6 +29,7 @@ export async function GET() {
 
     const messages: any[] = [];
     for await (const msg of imap.fetch("1:*", { envelope: true, uid: true })) {
+      if (!msg.envelope) continue;
       messages.push({
         id: msg.uid,
         from: msg.envelope.from?.[0]?.address || "unknown",
