@@ -18,6 +18,8 @@ import {
   CheckCircle2,
   Mail,
   ExternalLink,
+  X,
+  PenBox,
 } from "lucide-react";
 
 type Email = {
@@ -61,6 +63,13 @@ export default function DashboardPage() {
   const [loadingEmails, setLoadingEmails] = useState(true);
   const [emailError, setEmailError] = useState("");
   const [loadingBody, setLoadingBody] = useState(false);
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeTo, setComposeTo] = useState("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [sendSuccess, setSendSuccess] = useState(false);
 
   const metadataEmail = user?.publicMetadata?.claimedEmail as string | undefined;
   const resolvedEmail = claimedEmail || metadataEmail || null;
@@ -154,6 +163,37 @@ export default function DashboardPage() {
       setClaimError("Connection error");
     } finally {
       setClaiming(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!composeTo || !composeBody) return;
+    setSending(true);
+    setSendError("");
+    setSendSuccess(false);
+    try {
+      const res = await fetch("/api/mail/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: composeTo, subject: composeSubject, text: composeBody }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSendSuccess(true);
+        setTimeout(() => {
+          setShowCompose(false);
+          setComposeTo("");
+          setComposeSubject("");
+          setComposeBody("");
+          setSendSuccess(false);
+        }, 1500);
+      } else {
+        setSendError(data.error || "Failed to send");
+      }
+    } catch {
+      setSendError("Connection error");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -317,15 +357,15 @@ export default function DashboardPage() {
         {/* Top Bar */}
         <div className="h-14 border-b border-white/[0.06] flex items-center px-6 gap-4 flex-shrink-0">
           <span className="text-sm font-medium text-white/60 capitalize">{activeNav}</span>
-          <div className="ml-auto flex items-center gap-3">
-            <a
-              href="https://alimail.alione.cc"
-              target="_blank"
-              className="text-xs text-white/30 hover:text-white/60 flex items-center gap-1.5 transition"
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setShowCompose(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded-xl hover:bg-white/90 transition"
             >
-              <ExternalLink size={12} />
-              Full webmail
-            </a>
+              <PenBox size={15} />
+              Compose
+            </button>
+            <span className="text-white/10 mx-1">|</span>
             <button
               onClick={() => setForceClaimForm(true)}
               className="text-xs text-white/30 hover:text-white/60 underline underline-offset-2 transition"
@@ -444,6 +484,79 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      {/* Compose Modal */}
+      {showCompose && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-[#0a0a0a] border border-white/[0.08] rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+              <h2 className="font-outfit font-semibold text-white">New Message</h2>
+              <button
+                onClick={() => { setShowCompose(false); setSendError(""); setSendSuccess(false); }}
+                className="text-white/30 hover:text-white/60 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <input
+                type="email"
+                placeholder="To"
+                value={composeTo}
+                onChange={(e) => setComposeTo(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 text-sm"
+              />
+              <input
+                type="text"
+                placeholder="Subject"
+                value={composeSubject}
+                onChange={(e) => setComposeSubject(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 text-sm"
+              />
+              <textarea
+                placeholder="Write your message..."
+                value={composeBody}
+                onChange={(e) => setComposeBody(e.target.value)}
+                rows={8}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 text-sm resize-none"
+              />
+              {sendError && (
+                <p className="text-red-400 text-sm">{sendError}</p>
+              )}
+              {sendSuccess && (
+                <p className="text-green-400 text-sm flex items-center gap-2">
+                  <CheckCircle2 size={14} />
+                  Sent successfully!
+                </p>
+              )}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowCompose(false); setSendError(""); setSendSuccess(false); }}
+                  className="px-5 py-2.5 text-sm text-white/50 hover:text-white/80 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSend}
+                  disabled={sending || sendSuccess || !composeTo || !composeBody}
+                  className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded-xl hover:bg-white/90 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {sending ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={15} />
+                      Send
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
