@@ -1,9 +1,13 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { ImapFlow } from "imapflow";
+import { simpleParser } from "mailparser";
 
-export async function GET() {
+export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const mailbox = searchParams.get("mailbox") || "INBOX";
 
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
@@ -26,21 +30,28 @@ export async function GET() {
     });
 
     await imap.connect();
-    const status = await imap.status("INBOX", { messages: true });
+    const status = await imap.status(mailbox, { messages: true });
     const total = status.messages || 0;
 
     const messages: any[] = [];
     if (total > 0) {
-      const lock = await imap.getMailboxLock("INBOX");
-      const fetchOpts = { envelope: true, uid: true, flags: true };
+      const lock = await imap.getMailboxLock(mailbox);
+      const fetchOpts = { envelope: true, uid: true, flags: true, source: true };
       for await (const msg of imap.fetch(`1:${total}`, fetchOpts)) {
         if (!msg.envelope) continue;
+        let preview = "";
+        try {
+          const parsed = await simpleParser(msg.source!);
+          preview = (parsed.text || parsed.html || "").slice(0, 120);
+        } catch {}
         messages.push({
           id: msg.uid,
           from: msg.envelope.from?.[0]?.address || "unknown",
+          fromName: msg.envelope.from?.[0]?.name || "",
           subject: msg.envelope.subject || "(no subject)",
           date: msg.envelope.date?.toISOString() || "",
           seen: msg.flags ? msg.flags.has("\\Seen") : true,
+          preview,
         });
       }
       lock.release();
