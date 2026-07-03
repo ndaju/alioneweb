@@ -44,6 +44,9 @@ const clerkAppearance = {
 };
 
 export default function SignInPage() {
+  const isMail = typeof window !== "undefined" && window.location.hostname === "mail.alione.cc";
+  const redirectUrl = isMail ? "/" : "/dashboard";
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] relative overflow-hidden">
       <div className="noise-overlay" />
@@ -53,11 +56,13 @@ export default function SignInPage() {
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
       </div>
       <div className="relative z-10 flex flex-col items-center gap-6">
-        <a href="https://alione.cc" className="flex items-center gap-3">
+        <a href={isMail ? "https://mail.alione.cc" : "https://alione.cc"} className="flex items-center gap-3">
           <img src="/alione.png" alt="AliOne" className="w-10 h-10 rounded-xl" />
-          <span className="text-white font-outfit text-xl font-semibold tracking-tight">AliOne Auth</span>
+          <span className="text-white font-outfit text-xl font-semibold tracking-tight">
+            {isMail ? "AliOne Mail" : "AliOne Auth"}
+          </span>
         </a>
-        <SignIn appearance={clerkAppearance as any} fallbackRedirectUrl="/dashboard" />
+        <SignIn appearance={clerkAppearance as any} fallbackRedirectUrl={redirectUrl} />
       </div>
     </div>
   );

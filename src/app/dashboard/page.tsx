@@ -11,7 +11,7 @@ const products = [
     title: "AliOne Mail",
     description: "Secure, private email with your own @alione.cc address. Full IMAP access, spam protection, and a modern web interface.",
     icon: Mail,
-    href: "/dashboard/mail",
+    href: "https://mail.alione.cc",
     status: "Available" as const,
     gradient: "from-blue-500/15 to-cyan-500/15",
     iconBg: "bg-blue-500/10",
