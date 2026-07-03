@@ -7,12 +7,9 @@ export default clerkMiddleware(async (auth, request) => {
   const host = request.headers.get("host") || "";
   const url = request.nextUrl;
 
-  // mail.alione.cc subdomain → rewrite to /dashboard/mail
   if (host.startsWith("mail.alione.cc")) {
-    // Let sign-in, sign-up, API, and static files pass through
+    // Let API and static files pass through
     if (
-      url.pathname.startsWith("/sign-in") ||
-      url.pathname.startsWith("/sign-up") ||
       url.pathname.startsWith("/api") ||
       url.pathname.startsWith("/_next") ||
       url.pathname.startsWith("/favicon") ||
@@ -21,14 +18,22 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.next();
     }
 
-    // Rewrite root to /dashboard/mail
-    if (url.pathname === "/" || url.pathname !== "/dashboard/mail") {
+    // If not signed in and not already on sign-in, redirect to sign-in
+    const { userId } = await auth();
+    if (!userId && !url.pathname.startsWith("/sign-in") && !url.pathname.startsWith("/sign-up")) {
+      const signInUrl = new URL("/sign-in", url.origin);
+      signInUrl.searchParams.set("redirect_url", "/dashboard/mail");
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // If signed in, rewrite everything to /dashboard/mail
+    if (url.pathname !== "/dashboard/mail") {
       url.pathname = "/dashboard/mail";
       return NextResponse.rewrite(url);
     }
   }
 
-  // Clerk auth protection for non-public routes
+  // Clerk auth: protect non-public routes for all domains
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
