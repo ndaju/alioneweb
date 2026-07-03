@@ -247,8 +247,8 @@ export default function Home() {
               </div>
             </a>
 
-            {/* AliSearch — Incoming */}
-            <a href="https://alisearch.alione.cc" className="product-card product-card-soon reveal-up" style={{ animationDelay: "0.1s" }} data-product="search">
+            {/* AliSearch — Available */}
+            <a href="https://alisearch.alione.cc" className="product-card product-card-live reveal-up" style={{ animationDelay: "0.1s" }} data-product="search">
               <div className="product-card-glow"></div>
               <div className="product-card-inner">
                 <div className="product-card-header">
@@ -256,7 +256,7 @@ export default function Home() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/alisearch-logo.png" alt="AliSearch" style={{ width: 32, height: 32, borderRadius: 6, objectFit: "contain" }} />
                   </div>
-                  <span className="product-status product-status-soon">Incoming</span>
+                  <span className="product-status product-status-live">Available</span>
                 </div>
                 <h3 className="product-name">AliSearch</h3>
                 <p className="product-desc">Anonymous search engine. No profiling. No tracking. Just results.</p>
@@ -618,6 +618,7 @@ export default function Home() {
                 </div>
                 <div className="phase-items">
                   <div className="phase-item"><div className="phase-item-dot"></div><div><h4>AliBrowser</h4><p>Privacy-first browser with vertical tabs and workspaces</p></div></div>
+                  <div className="phase-item"><div className="phase-item-dot"></div><div><h4>AliSearch</h4><p>Anonymous search engine with transparent ranking</p></div></div>
                 </div>
               </div>
             </div>
@@ -628,7 +629,6 @@ export default function Home() {
                   <span className="phase-date">Upcoming</span>
                 </div>
                 <div className="phase-items">
-                  <div className="phase-item"><div className="phase-item-dot"></div><div><h4>AliSearch</h4><p>Anonymous search engine with transparent ranking</p></div></div>
                   <div className="phase-item"><div className="phase-item-dot"></div><div><h4>AliOne Platform</h4><p>All-in-one account hub connecting every product</p></div></div>
                 </div>
               </div>
@@ -684,7 +684,7 @@ export default function Home() {
             <div className="footer-col">
               <h4>Products</h4>
               <a href="https://alibrowser.alione.cc">AliBrowser</a>
-              <a href="#" style={{ opacity: 0.5 }}>AliSearch <span style={{ fontSize: 11, opacity: 0.6 }}>soon</span></a>
+              <a href="https://alisearch.alione.cc">AliSearch</a>
               <a href="#" style={{ opacity: 0.5 }}>AliOne <span style={{ fontSize: 11, opacity: 0.6 }}>soon</span></a>
               <a href="#" style={{ opacity: 0.5 }}>AliMail <span style={{ fontSize: 11, opacity: 0.6 }}>soon</span></a>
               <a href="#" style={{ opacity: 0.5 }}>AliDrive <span style={{ fontSize: 11, opacity: 0.6 }}>soon</span></a>

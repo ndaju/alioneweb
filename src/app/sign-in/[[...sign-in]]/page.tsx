@@ -61,7 +61,7 @@ export default function SignInPage() {
         <a href={isMail ? "https://mail.alione.cc" : "https://alione.cc"} className="flex items-center gap-3">
           <img src="/alione.png" alt="AliOne" className="w-10 h-10 rounded-xl" />
           <span className="text-white font-outfit text-xl font-semibold tracking-tight">
-            {isMail ? "AliOne Mail" : "AliOne Auth"}
+            {"AliOne Auth"}
           </span>
         </a>
         <SignIn appearance={clerkAppearance as any} fallbackRedirectUrl={redirectUrl} />

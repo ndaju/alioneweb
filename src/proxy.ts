@@ -27,7 +27,7 @@ export default clerkMiddleware(async (auth, request) => {
     }
 
     // If signed in, rewrite everything to /dashboard/mail
-    if (url.pathname !== "/dashboard/mail") {
+    if (userId && url.pathname !== "/dashboard/mail") {
       url.pathname = "/dashboard/mail";
       return NextResponse.rewrite(url);
     }

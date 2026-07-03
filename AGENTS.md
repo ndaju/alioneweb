@@ -38,4 +38,26 @@ Consider adding this file to `.gitignore` and keeping only a `.gitkeep`.
 - Config file: `docker-mailserver/config/fail2ban-jail.cf` (persists across restarts)
 - Manual: `docker exec mailserver sh -c 'sed -i "s|ignoreip = 127.0.0.1/8|ignoreip = 127.0.0.1/8 172.18.0.0/16|" /etc/fail2ban/jail.local; fail2ban-client reload'`
 - To unban: `docker exec mailserver sh -c 'fail2ban-client unban --all; nft flush table inet f2b-table'`
+## Clerk & Domain Configuration
+- **VPS repo structure**: Files are at repo root (`~/alioneweb/`), NOT in `next/` subdirectory. Dockerfile, docker-compose.yml, src/ all at root.
+- **Docker build**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` must be passed as a build arg (not just runtime env) because Next.js inlines it at build time.
+- **docker-compose.yml**: Both `build.args` AND `environment` must have the key hardcoded:
+  ```yaml
+  build:
+    args:
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+  environment:
+    - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+    - CLERK_SECRET_KEY=sk_live_...
+  ```
+- **Clerk production keys** enforce domain validation. `mail.alione.cc` must be in Clerk Dashboard "Allowed subdomains" AND served over HTTPS.
+- **Cloudflare "Always Use HTTPS"** (SSL/TLS → Edge Certificates) must be ON for mail.alione.cc, otherwise Clerk rejects `http://` with `secure-context: false` + origin error.
+- **VPS quick edits**: Use `sed -i` for file changes, then `docker compose build --no-cache nextjs && docker compose up -d nextjs` to rebuild (no git push/pull needed).
+- **Session sharing**: Clerk sessions on `alione.cc` are NOT automatically shared with `mail.alione.cc` subdomain. Need `isSatellite` config or proper Clerk domain setup.
+
+## proxy.ts Mail Subdomain Logic
+- `mail.alione.cc` unauthenticated requests → redirect to `/sign-in?redirect_url=/dashboard/mail`
+- `mail.alione.cc` authenticated requests → rewrite to `/dashboard/mail`
+- The rewrite line MUST check `userId`: `if (userId && url.pathname !== "/dashboard/mail")`
+- Without `userId` check, `/sign-in` gets rewritten to `/dashboard/mail` causing blank page.
 <!-- END:aliome-crucial-context -->
