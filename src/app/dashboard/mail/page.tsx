@@ -102,7 +102,7 @@ export default function MailDashboardPage() {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState("");
   const [claimSuccess, setClaimSuccess] = useState(false);
-  const [forceClaimForm, setForceClaimForm] = useState(false);
+
   const [username, setUsername] = useState("");
   const [domain, setDomain] = useState("alione.cc");
   const [password1, setPassword1] = useState("");
@@ -122,7 +122,7 @@ export default function MailDashboardPage() {
 
   const metadataEmail = user?.publicMetadata?.claimedEmail as string | undefined;
   const resolvedEmail = claimedEmail || metadataEmail || null;
-  const showClaimForm = (!resolvedEmail || forceClaimForm) && !claimSuccess;
+  const showClaimForm = !resolvedEmail && !claimSuccess;
 
   const mailboxForNav: Record<NavItem, string> = { inbox: "INBOX", sent: "Sent", drafts: "Drafts", settings: "INBOX" };
 
@@ -171,7 +171,7 @@ export default function MailDashboardPage() {
     try {
       const res = await fetch("/api/claim-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, domain, password: password1 }) });
       const data = await res.json();
-      if (data.success) { setClaimedEmail(data.email); setClaimSuccess(true); setForceClaimForm(false); }
+      if (data.success) { setClaimedEmail(data.email); setClaimSuccess(true); }
       else setClaimError(data.error || "Failed to claim email");
     } catch { setClaimError("Connection error"); } finally { setClaiming(false); }
   };
@@ -289,7 +289,7 @@ export default function MailDashboardPage() {
               <span className="text-sm font-medium text-white/60 capitalize">{activeNav}</span>
               {isMailView && emails.length > 0 && <span className="text-xs text-white/25 bg-white/[0.04] px-2 py-0.5 rounded-full">{emails.length}</span>}
             </div>
-            {resolvedEmail && <button onClick={() => setForceClaimForm(true)} className="text-xs text-white/20 hover:text-white/40 transition underline underline-offset-2">Change</button>}
+
           </div>
 
           {/* List body */}
