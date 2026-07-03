@@ -1,5 +1,6 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import nodemailer from "nodemailer";
+import { ImapFlow } from "imapflow";
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -29,12 +30,35 @@ export async function POST(req: Request) {
       tls: { rejectUnauthorized: false },
     });
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: email,
       to,
       subject,
       text,
     });
+
+    // Save a copy to the Sent folder via IMAP
+    if (info.messageId) {
+      try {
+        const imap = new ImapFlow({
+          host: "mailserver",
+          port: 143,
+          secure: false,
+          auth: { user: email, pass: password },
+          logger: false,
+          tls: { rejectUnauthorized: false },
+        });
+        await imap.connect();
+
+        const date = new Date().toUTCString();
+        const raw = `Date: ${date}\r\nFrom: ${email}\r\nTo: ${to}\r\nSubject: ${subject}\r\nMessage-ID: ${info.messageId}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 7bit\r\n\r\n${text}`;
+
+        await imap.append("Sent", raw, ["\\Seen"]);
+        await imap.logout();
+      } catch (imapErr) {
+        // Sent copy is optional, don't fail the send
+      }
+    }
 
     return Response.json({ success: true });
   } catch (err: any) {
