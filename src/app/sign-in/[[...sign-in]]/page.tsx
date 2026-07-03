@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import { SignIn } from "@clerk/nextjs";
 
 const clerkAppearance = {
@@ -44,7 +45,8 @@ const clerkAppearance = {
 };
 
 export default function SignInPage() {
-  const isMail = typeof window !== "undefined" && window.location.hostname === "mail.alione.cc";
+  const [isMail, setIsMail] = useState(false);
+  useEffect(() => { setIsMail(window.location.hostname === "mail.alione.cc"); }, []);
   const redirectUrl = isMail ? "/" : "/dashboard";
 
   return (
