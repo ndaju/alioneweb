@@ -57,7 +57,7 @@ export default function SignInPage() {
           <img src="/alione.png" alt="AliOne" className="w-10 h-10 rounded-xl" />
           <span className="text-white font-outfit text-xl font-semibold tracking-tight">AliOne Auth</span>
         </a>
-        <SignIn appearance={clerkAppearance as any} />
+        <SignIn appearance={clerkAppearance as any} fallbackRedirectUrl="/dashboard" />
       </div>
     </div>
   );
