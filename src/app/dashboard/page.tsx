@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth, useUser } from "@clerk/nextjs";
-import { Mail, HardDrive, Image, Search, Loader2, Sparkles, LogOut, ChevronRight } from "lucide-react";
+import { Mail, HardDrive, Image, Search, Loader2, Sparkles, LogOut, ArrowUpRight, Lock } from "lucide-react";
 import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
@@ -10,42 +10,50 @@ const products = [
   {
     id: "search",
     title: "AliSearch",
-    description: "Anonymous search engine. No profiling. No tracking. Just results.",
+    description: "Anonymous search engine. No tracking. Just results.",
     icon: Search,
     href: "https://alisearch.alione.cc",
-    status: "Available" as const,
+    online: true,
+    gradient: "from-emerald-500/10 to-teal-500/10",
     iconBg: "bg-emerald-500/10",
     iconColor: "text-emerald-400",
+    borderGlow: "group-hover:border-emerald-500/30",
   },
   {
     id: "mail",
-    title: "AliOne Mail",
-    description: "Secure, private email with your own @alione.cc address. Full IMAP access, spam protection, and a modern web interface.",
+    title: "Mail",
+    description: "Private email with your own @alione.cc address.",
     icon: Mail,
     href: "https://mail.alione.cc",
-    status: "Available" as const,
+    online: true,
+    gradient: "from-blue-500/10 to-cyan-500/10",
     iconBg: "bg-blue-500/10",
     iconColor: "text-blue-400",
+    borderGlow: "group-hover:border-blue-500/30",
   },
   {
     id: "drive",
     title: "AliDrive",
-    description: "Cloud storage for your files. Store, share, and sync seamlessly across all your devices with end-to-end encryption.",
+    description: "Cloud storage. Store, share, and sync your files.",
     icon: HardDrive,
     href: "#",
-    status: "Coming Soon" as const,
+    online: false,
+    gradient: "from-amber-500/10 to-orange-500/10",
     iconBg: "bg-amber-500/10",
     iconColor: "text-amber-400",
+    borderGlow: "",
   },
   {
     id: "photos",
     title: "AliPhotos",
-    description: "Backup, organize, and relive your memories. Smart albums and seamless sharing — all in one place.",
+    description: "Backup and relive your memories. Smart albums.",
     icon: Image,
     href: "#",
-    status: "Coming Soon" as const,
+    online: false,
+    gradient: "from-purple-500/10 to-pink-500/10",
     iconBg: "bg-purple-500/10",
     iconColor: "text-purple-400",
+    borderGlow: "",
   },
 ];
 
@@ -85,7 +93,6 @@ export default function DashboardPage() {
                 <img src="/alione.png" alt="AliOne" className="w-5 h-5" />
               </div>
               <span className="text-lg font-outfit font-semibold tracking-tight">AliOne</span>
-              <span className="text-[11px] text-white/20 ml-1 px-2 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.06]">Dashboard</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-white/30 hidden md:block">{email}</span>
@@ -100,7 +107,7 @@ export default function DashboardPage() {
         </header>
 
         <main className="flex-1 flex items-center justify-center px-6 sm:px-8 py-16">
-          <div className="w-full max-w-5xl">
+          <div className="w-full max-w-3xl">
             <div className="text-center mb-14">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-full text-xs text-white/40 mb-5">
                 <Sparkles size={12} />
@@ -110,29 +117,26 @@ export default function DashboardPage() {
                 Your{" "}
                 <span className="bg-gradient-to-r from-white via-white/80 to-white/50 bg-clip-text text-transparent">ecosystem</span>
               </h1>
-              <p className="text-white/30 text-base max-w-md mx-auto">Choose a service to continue. All products work together through your AliOne account.</p>
+              <p className="text-white/30 text-base max-w-md mx-auto">Choose a service to continue.</p>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-4">
               {products.map((product, i) => {
                 const Icon = product.icon;
-                const isAvailable = product.status === "Available";
                 return (
                   <div
                     key={product.id}
                     className={`group relative rounded-2xl transition-all duration-500 ${
                       mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-                    } ${isAvailable ? "cursor-pointer" : "cursor-not-allowed"}`}
+                    } ${product.online ? "cursor-pointer" : "cursor-not-allowed"}`}
                     style={{ transitionDelay: `${i * 0.08}s` }}
                   >
-                    {isAvailable ? (
-                      <Link href={product.href} className="block h-full">
-                        <CardContent product={product} Icon={Icon} isAvailable={isAvailable} />
+                    {product.online ? (
+                      <Link href={product.href} className="block">
+                        <CardContent product={product} Icon={Icon} />
                       </Link>
                     ) : (
-                      <div className="h-full">
-                        <CardContent product={product} Icon={Icon} isAvailable={isAvailable} />
-                      </div>
+                      <CardContent product={product} Icon={Icon} />
                     )}
                   </div>
                 );
@@ -142,8 +146,8 @@ export default function DashboardPage() {
         </main>
 
         <footer className="border-t border-white/[0.04]">
-          <div className="max-w-5xl mx-auto px-6 sm:px-8 h-14 flex items-center justify-between">
-            <p className="text-xs text-white/15">AliOne Ecosystem &mdash; {new Date().getFullYear()}</p>
+          <div className="max-w-3xl mx-auto px-6 sm:px-8 h-14 flex items-center justify-between">
+            <p className="text-xs text-white/15">AliOne &mdash; {new Date().getFullYear()}</p>
             <a href="https://alione.cc" className="text-xs text-white/20 hover:text-white/40 transition">alione.cc</a>
           </div>
         </footer>
@@ -152,33 +156,39 @@ export default function DashboardPage() {
   );
 }
 
-function CardContent({ product, Icon, isAvailable }: { product: typeof products[0]; Icon: any; isAvailable: boolean }) {
+function CardContent({ product, Icon }: { product: typeof products[0]; Icon: any }) {
   return (
-    <div className={`relative h-full bg-[#0a0a0a] border rounded-2xl p-7 transition-all duration-300 overflow-hidden ${
-      isAvailable
-        ? "border-white/[0.08] group-hover:border-white/20 group-hover:shadow-2xl group-hover:shadow-black/40 group-hover:-translate-y-1"
+    <div className={`relative pl-6 pr-5 py-5 bg-[#0a0a0a] border rounded-2xl transition-all duration-300 ${
+      product.online
+        ? `border-white/[0.08] ${product.borderGlow} hover:shadow-2xl hover:shadow-black/40 hover:-translate-y-0.5`
         : "border-white/[0.05] opacity-40"
     }`}>
-      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`}>
-        <div className={`absolute inset-0 bg-gradient-to-br ${product.id === "search" ? "from-emerald-500/8 to-transparent" : product.id === "mail" ? "from-blue-500/8 to-transparent" : product.id === "drive" ? "from-amber-500/8 to-transparent" : "from-purple-500/8 to-transparent"} rounded-2xl`} />
-      </div>
-      <div className="relative z-10 flex flex-col h-full min-h-[200px]">
-        <div className="flex items-start justify-between mb-5">
-          <div className={`w-14 h-14 rounded-2xl ${product.iconBg} border border-white/[0.08] flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-            <Icon size={24} className={product.iconColor} />
-          </div>
-          <span className={`text-[11px] font-semibold px-3 py-1 rounded-full border tracking-wide ${
-            isAvailable
-              ? "text-green-400 bg-green-500/10 border-green-500/20"
-              : "text-amber-400 bg-amber-500/10 border-amber-500/20"
-          }`}>{product.status}</span>
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl ${product.gradient}`} />
+      <div className="relative z-10 flex items-center gap-5">
+        <div className={`shrink-0 w-12 h-12 rounded-xl ${product.iconBg} border border-white/[0.08] flex items-center justify-center group-hover:scale-105 transition-transform duration-300`}>
+          <Icon size={22} className={product.iconColor} />
         </div>
-        <h3 className="text-xl font-outfit font-semibold mb-2">{product.title}</h3>
-        <p className="text-sm text-white/35 leading-relaxed flex-1">{product.description}</p>
-        {isAvailable && (
-          <div className="flex items-center gap-2 text-sm text-white/20 group-hover:text-white/60 transition-all duration-300 mt-6 pt-5 border-t border-white/[0.06]">
-            <span className="font-medium">Open</span>
-            <ChevronRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-outfit font-semibold">{product.title}</h3>
+            <span className={`shrink-0 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border tracking-wide ${
+              product.online
+                ? "text-green-400 bg-green-500/10 border-green-500/20"
+                : "text-amber-400 bg-amber-500/10 border-amber-500/20"
+            }`}>
+              {product.online ? "Available" : "Coming Soon"}
+            </span>
+          </div>
+          <p className="text-sm text-white/35 mt-0.5 truncate">{product.description}</p>
+        </div>
+        {product.online && (
+          <div className="shrink-0 w-9 h-9 rounded-xl bg-white/5 border border-white/[0.06] flex items-center justify-center group-hover:bg-white/10 transition-colors">
+            <ArrowUpRight size={16} className="text-white/30 group-hover:text-white/60 transition-colors" />
+          </div>
+        )}
+        {!product.online && (
+          <div className="shrink-0 w-9 h-9 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center">
+            <Lock size={14} className="text-white/15" />
           </div>
         )}
       </div>
