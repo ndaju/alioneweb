@@ -120,27 +120,20 @@ export default function DashboardPage() {
           {products.map((product, i) => {
             const Icon = product.icon;
             const isLive = product.available;
-            const Wrapper = isLive ? Link : "div";
-            const wrapperProps = isLive ? { href: product.href } : {};
+            const cardClass = `group block rounded-2xl border border-white/[0.06] bg-[#0d0d0d] p-8 transition-all duration-300 ${
+              isLive
+                ? "cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-white/[0.12]"
+                : "opacity-40 cursor-not-allowed"
+            } ${product.cardHover} ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`;
+            const delay = { transitionDelay: `${i * 0.1}s` };
 
-            return (
-              <Wrapper
-                key={product.id}
-                {...wrapperProps}
-                className={`group block rounded-2xl border border-white/[0.06] bg-[#0d0d0d] p-8 transition-all duration-300 ${
-                  isLive
-                    ? `cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-white/[0.12]`
-                    : "opacity-40 cursor-not-allowed"
-                } ${product.cardHover} ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
-                style={{ transitionDelay: `${i * 0.1}s` }}
-              >
+            const inner = (
+              <>
                 <div className={`w-14 h-14 rounded-2xl ${product.iconBg} border border-white/[0.06] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
                   <Icon size={26} className={product.iconColor} />
                 </div>
-
                 <h3 className="text-xl font-outfit font-semibold mb-1.5">{product.title}</h3>
                 <p className="text-sm text-white/30 leading-relaxed">{product.description}</p>
-
                 <div className="mt-6 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className={`w-1.5 h-1.5 rounded-full ${product.dot}`} />
@@ -153,7 +146,17 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-              </Wrapper>
+              </>
+            );
+
+            return isLive ? (
+              <Link key={product.id} href={product.href} className={cardClass} style={delay}>
+                {inner}
+              </Link>
+            ) : (
+              <div key={product.id} className={cardClass} style={delay}>
+                {inner}
+              </div>
             );
           })}
         </div>
