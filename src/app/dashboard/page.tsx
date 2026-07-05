@@ -21,7 +21,7 @@ const products = [
     name: "AliOne Mail",
     desc: "Private email with your own @alione.cc address. Full IMAP access.",
     icon: Mail,
-    href: "https://mail.alione.cc",
+    href: "https://alimail.alione.cc",
     iconClass: "product-icon product-icon-mail",
     status: "live",
     features: ["E2E Encryption", "Custom Domains", "Spam Protection", "IMAP Access"],

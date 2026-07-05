@@ -114,7 +114,7 @@ export default function MailDashboard() {
   useEffect(() => { if (rRef.current) rRef.current.scrollTop = 0; }, [sel]);
 
   if (!isSignedIn) return null;
-  if (!isLoaded) return <div className="h-screen bg-[#050505] flex items-center justify-center"><Loader2 size={24} className="animate-spin text-white/30" /></div>;
+  if (!isLoaded) return <div className="min-h-screen" style={{ background: "var(--bg, #0A0A0B)" }}><div className="flex items-center justify-center min-h-screen"><Loader2 size={24} className="animate-spin" style={{ color: "var(--text-tertiary, #636370)" }} /></div></div>;
 
   const selected = rd;
 
@@ -157,31 +157,37 @@ export default function MailDashboard() {
   // Claim form
   if (needClaim) {
     return (
-      <div className="h-screen bg-[#050505] flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="flex items-center gap-3 mb-10">
-            <img src="/alione.png" className="w-9 h-9 rounded-xl" />
-            <span className="text-lg font-outfit font-semibold">AliOne Mail</span>
-          </div>
-          <h1 className="text-2xl font-outfit font-bold mb-1">Claim your email</h1>
-          <p className="text-white/40 text-sm mb-8">Choose your @alione.cc address</p>
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs text-white/30 mb-1.5 block">Email</label>
-              <div className="flex">
-                <input type="text" placeholder="username" value={uname} onChange={e => setUname(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))} className="flex-1 bg-white/5 border border-white/10 rounded-l-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 font-mono" />
-                <span className="bg-white/5 border border-l-0 border-white/10 px-3 py-2.5 text-white/40 text-sm font-mono">@alione.cc</span>
+      <div className="min-h-screen" style={{ background: "var(--bg, #0A0A0B)" }}>
+        <div className="flex items-center justify-center min-h-screen p-8">
+          <div className="w-full max-w-md">
+            <div className="flex items-center gap-3 mb-10" style={{ fontFamily: "var(--font-display)" }}>
+              <img src="/alione.png" className="w-9 h-9 rounded-xl" style={{ border: "1px solid var(--border, #2A2A2E)" }} />
+              <span style={{ fontSize: 18, fontWeight: 700 }}>AliOne Mail</span>
+            </div>
+            <h1 style={{ fontSize: 24, fontFamily: "var(--font-display)", fontWeight: 700, marginBottom: 4 }}>Claim your email</h1>
+            <p style={{ fontSize: 14, color: "var(--text-secondary, #9A9AA8)", marginBottom: 32 }}>Choose your @alione.cc address</p>
+            <div className="space-y-4" style={{ maxWidth: 400 }}>
+              <div>
+                <label style={{ fontSize: 12, color: "var(--text-tertiary, #636370)", marginBottom: 6, display: "block" }}>Email</label>
+                <div className="flex" style={{ fontFamily: "var(--font-body)" }}>
+                  <input type="text" placeholder="username" value={uname} onChange={e => setUname(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
+                    style={{ flex: 1, background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", borderRight: "none", borderRadius: "var(--radius-md, 12px) 0 0 var(--radius-md, 12px)", padding: "10px 16px", fontSize: 14, color: "var(--text, #F0F0F2)", outline: "none" }}
+                    className="font-mono" />
+                  <span style={{ background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", borderLeft: "none", borderRadius: "0 var(--radius-md, 12px) var(--radius-md, 12px) 0", padding: "10px 12px", fontSize: 14, color: "var(--text-tertiary, #636370)" }} className="font-mono">@alione.cc</span>
+                </div>
               </div>
+              <div>
+                <label style={{ fontSize: 12, color: "var(--text-tertiary, #636370)", marginBottom: 6, display: "block" }}>Password</label>
+                <input type="password" placeholder="Strong password" value={pw} onChange={e => setPw(e.target.value)}
+                  style={{ width: "100%", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", borderRadius: "var(--radius-md, 12px)", padding: "10px 16px", fontSize: 14, color: "var(--text, #F0F0F2)", outline: "none", fontFamily: "var(--font-body)" }} />
+              </div>
+              {claimErr && <p style={{ color: "#f87171", fontSize: 12 }}>{claimErr}</p>}
+              <button onClick={handleClaim} disabled={claiming || claimOk || !uname || !pw}
+                className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }}>
+                {claiming ? <><Loader2 size={14} className="animate-spin" /> Creating...</> : claimOk ? <><CheckCircle2 size={14} /> Claimed!</> : "Claim Email"}
+              </button>
+              {claimOk && <p style={{ color: "#34D399", fontSize: 12, textAlign: "center" }}>✓ {myEmail} is yours!</p>}
             </div>
-            <div>
-              <label className="text-xs text-white/30 mb-1.5 block">Password</label>
-              <input type="password" placeholder="Strong password" value={pw} onChange={e => setPw(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20" />
-            </div>
-            {claimErr && <p className="text-red-400 text-xs">{claimErr}</p>}
-            <button onClick={handleClaim} disabled={claiming || claimOk || !uname || !pw} className="w-full bg-white text-black text-sm font-medium rounded-xl py-2.5 hover:bg-white/90 transition disabled:opacity-40 flex items-center justify-center gap-2">
-              {claiming ? <><Loader2 size={14} className="animate-spin" /> Creating...</> : claimOk ? <><CheckCircle2 size={14} /> Claimed!</> : "Claim Email"}
-            </button>
-            {claimOk && <p className="text-green-400 text-xs text-center">✓ {myEmail} is yours!</p>}
           </div>
         </div>
       </div>
@@ -190,22 +196,23 @@ export default function MailDashboard() {
 
   // Main layout
   return (
-    <div className="h-screen bg-[#0a0a0a] text-white flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--bg, #0A0A0B)" }}>
 
       {/* Header */}
-      <header className="h-14 flex items-center justify-between px-6 flex-shrink-0 bg-[#0e0e0e] border-b border-white/[0.05]">
+      <header style={{ height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", flexShrink: 0, background: "rgba(20, 20, 22, 0.9)", borderBottom: "1px solid var(--border, #2A2A2E)", backdropFilter: "blur(20px)" }}>
         <div className="flex items-center gap-5">
           <a href="/dashboard" className="flex items-center gap-2.5 group">
-            <img src="/alione.png" className="w-7 h-7 rounded-lg" />
-            <span className="text-sm font-outfit font-semibold text-white/60 group-hover:text-white/80 transition">AliOne Mail</span>
+            <img src="/alione.png" className="w-6 h-6 rounded-md" style={{ border: "1px solid var(--border, #2A2A2E)" }} />
+            <span style={{ fontSize: 14, fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--text-secondary, #9A9AA8)" }} className="group-hover" onMouseEnter={e => e.currentTarget.style.color = "var(--text, #F0F0F2)"} onMouseLeave={e => e.currentTarget.style.color = "var(--text-secondary, #9A9AA8)"}>AliOne Mail</span>
           </a>
-          <div className="h-5 w-px bg-white/[0.06]" />
+          <div style={{ width: 1, height: 20, background: "var(--border, #2A2A2E)" }} />
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(item => {
               const Icon = item.icon;
               return (
-                <button key={item.key} onClick={() => setTab(item.key)} className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm transition-all ${tab === item.key ? "bg-white/[0.08] text-white font-medium" : "text-white/35 hover:text-white/55 hover:bg-white/[0.03]"}`}>
-                  <Icon size={15} />
+                <button key={item.key} onClick={() => setTab(item.key)}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: "var(--radius-md, 12px)", fontSize: 13, transition: "all 150ms", cursor: "pointer", background: "none", border: "none", color: tab === item.key ? "var(--text, #F0F0F2)" : "var(--text-tertiary, #636370)", fontWeight: tab === item.key ? 500 : 400, background: tab === item.key ? "var(--bg-subtle, #1C1C1F)" : "transparent" }}>
+                  <Icon size={14} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -213,15 +220,19 @@ export default function MailDashboard() {
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setCompose(true)} className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-white/90 transition">
-            <PenBox size={14} /> Compose
+          <button onClick={() => setCompose(true)} className="btn btn-primary btn-sm">
+            <PenBox size={13} /> Compose
           </button>
-          <button onClick={fetchList} disabled={loading} className="p-2 rounded-lg hover:bg-white/[0.05] text-white/25 hover:text-white/45 transition disabled:opacity-30">
+          <button onClick={fetchList} disabled={loading}
+            style={{ padding: 8, borderRadius: "var(--radius-md, 12px)", cursor: "pointer", background: "none", border: "none", color: "var(--text-tertiary, #636370)", transition: "color 150ms" }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--text-secondary, #9A9AA8)"} onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary, #636370)"}>
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           </button>
-          <div className="h-5 w-px bg-white/[0.06]" />
-          <span className="text-xs text-white/25 hidden lg:block">{myEmail}</span>
-          <button onClick={() => signOut()} className="p-2 rounded-lg hover:bg-white/[0.05] text-white/20 hover:text-white/40 transition">
+          <div style={{ width: 1, height: 20, background: "var(--border, #2A2A2E)" }} />
+          <span style={{ fontSize: 12, color: "var(--text-tertiary, #636370)", display: "none" }} className="lg:block">{myEmail}</span>
+          <button onClick={() => signOut()}
+            style={{ padding: 8, borderRadius: "var(--radius-md, 12px)", cursor: "pointer", background: "none", border: "none", color: "var(--text-tertiary, #636370)", transition: "color 150ms" }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--text-secondary, #9A9AA8)"} onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary, #636370)"}>
             <LogOut size={15} />
           </button>
         </div>
@@ -231,13 +242,13 @@ export default function MailDashboard() {
       <div className="flex-1 flex min-h-0">
 
         {/* Email list */}
-        <div className="w-[420px] min-w-[320px] border-r border-white/[0.05] flex flex-col flex-shrink-0 bg-[#0c0c0c]">
+        <div className="w-[420px] min-w-[320px] flex flex-col flex-shrink-0" style={{ borderRight: "1px solid var(--border, #2A2A2E)", background: "var(--bg-elevated, #141416)" }}>
           {/* List header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.04] flex-shrink-0">
+          <div className="flex items-center justify-between px-5 py-3 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-subtle, #222226)" }}>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-white/40 uppercase tracking-wider">{tab}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-secondary, #9A9AA8)" }}>{tab}</span>
               {isMail && emails.length > 0 && (
-                <span className="text-[10px] text-white/20 bg-white/[0.04] px-2 py-0.5 rounded-full">{emails.length}</span>
+                <span style={{ fontSize: 11, color: "var(--text-tertiary, #636370)", padding: "1px 8px", borderRadius: "var(--radius-full, 9999px)", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)" }}>{emails.length}</span>
               )}
             </div>
           </div>
@@ -247,9 +258,9 @@ export default function MailDashboard() {
             {!isMail ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <Settings size={32} className="mx-auto mb-3 text-white/10" />
-                  <p className="text-sm text-white/25">Settings</p>
-                  <p className="text-xs text-white/10 mt-1">Coming soon</p>
+                  <Settings size={32} className="mx-auto mb-3" style={{ color: "var(--text-tertiary, #636370)", opacity: 0.3 }} />
+                  <p style={{ fontSize: 14, color: "var(--text-secondary, #9A9AA8)", opacity: 0.5 }}>Settings</p>
+                  <p style={{ fontSize: 12, color: "var(--text-tertiary, #636370)", marginTop: 4, opacity: 0.5 }}>Coming soon</p>
                 </div>
               </div>
             ) : loading ? (
@@ -257,20 +268,23 @@ export default function MailDashboard() {
             ) : error ? (
               <div className="flex items-center justify-center h-full px-6">
                 <div className="text-center">
-                  <p className="text-sm text-red-400/50">{error}</p>
-                  <button onClick={fetchList} className="text-xs text-white/25 hover:text-white/50 mt-3 underline">Retry</button>
+                  <p style={{ fontSize: 14, color: "#f87171", opacity: 0.5 }}>{error}</p>
+                  <button onClick={fetchList} style={{ fontSize: 12, color: "var(--text-tertiary, #636370)", cursor: "pointer", background: "none", border: "none", textDecoration: "underline", marginTop: 12 }}>Retry</button>
                 </div>
               </div>
             ) : emails.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center px-10">
-                  <div className="w-14 h-14 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center mx-auto mb-4">
-                    <Mail size={24} className="text-white/10" />
+                  <div style={{ width: 56, height: 56, borderRadius: "var(--radius-xl, 20px)", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                    <Mail size={24} style={{ color: "var(--text-tertiary, #636370)", opacity: 0.3 }} />
                   </div>
-                  <p className="text-sm text-white/30 font-medium">No emails</p>
-                  <p className="text-xs text-white/15 mt-1">{tab === "inbox" ? "Your inbox is empty" : tab === "sent" ? "No sent emails" : "No drafts"}</p>
+                  <p style={{ fontSize: 14, color: "var(--text-secondary, #9A9AA8)", fontWeight: 500 }}>No emails</p>
+                  <p style={{ fontSize: 12, color: "var(--text-tertiary, #636370)", marginTop: 4 }}>{tab === "inbox" ? "Your inbox is empty" : tab === "sent" ? "No sent emails" : "No drafts"}</p>
                   {tab === "inbox" && (
-                    <button onClick={() => setCompose(true)} className="mt-5 text-xs bg-white/[0.06] hover:bg-white/10 text-white/40 px-4 py-2 rounded-lg transition">
+                    <button onClick={() => setCompose(true)}
+                      style={{ marginTop: 20, fontSize: 12, color: "var(--text-secondary, #9A9AA8)", cursor: "pointer", padding: "8px 16px", borderRadius: "var(--radius-md, 12px)", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", transition: "all 150ms" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-elevated, #141416)"; e.currentTarget.style.color = "var(--text, #F0F0F2)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-subtle, #1C1C1F)"; e.currentTarget.style.color = "var(--text-secondary, #9A9AA8)"; }}>
                       Compose your first email
                     </button>
                   )}
@@ -280,17 +294,20 @@ export default function MailDashboard() {
               emails.map(email => {
                 const isSel = sel === email.id;
                 return (
-                  <button key={email.id} onClick={() => setSel(email.id)} className={`w-full text-left px-5 py-4 border-b border-white/[0.03] hover:bg-white/[0.02] transition relative ${isSel ? "bg-white/[0.03]" : ""} ${email.unread ? "bg-white/[0.01]" : ""}`}>
-                    {email.unread && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-400/50" />}
+                  <button key={email.id} onClick={() => setSel(email.id)}
+                    style={{ width: "100%", textAlign: "left", padding: "16px 20px", cursor: "pointer", background: "none", border: "none", borderBottom: "1px solid var(--border-subtle, #222226)", color: "var(--text, #F0F0F2)", position: "relative", transition: "background 150ms" }}
+                    onMouseEnter={e => e.currentTarget.style.background = isSel ? "var(--bg-subtle, #1C1C1F)" : "rgba(255,255,255,0.015)"}
+                    onMouseLeave={e => e.currentTarget.style.background = isSel ? "var(--bg-subtle, #1C1C1F)" : "transparent"}>
+                    {email.unread && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 2, background: "var(--community, #3B82F6)" }} />}
                     <div className="flex gap-3">
                       <Avatar email={email.from} name={dn(email)} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <span className={`text-sm truncate ${email.unread ? "font-semibold text-white" : "text-white/60"}`}>{dn(email)}</span>
-                          <span className="text-[11px] text-white/20 flex-shrink-0 ml-3">{email.date}</span>
+                          <span style={{ fontSize: 14, fontWeight: email.unread ? 600 : 400, color: email.unread ? "var(--text, #F0F0F2)" : "var(--text-secondary, #9A9AA8)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{dn(email)}</span>
+                          <span style={{ fontSize: 11, color: "var(--text-tertiary, #636370)", flexShrink: 0, marginLeft: 12 }}>{email.date}</span>
                         </div>
-                        <p className={`text-sm truncate mb-0.5 ${email.unread ? "font-medium text-white/75" : "text-white/40"}`}>{email.subject}</p>
-                        {email.preview && <p className="text-xs text-white/20 truncate">{email.preview}</p>}
+                        <p style={{ fontSize: 14, fontWeight: email.unread ? 500 : 400, color: email.unread ? "rgba(255,255,255,0.7)" : "var(--text-tertiary, #636370)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 1 }}>{email.subject}</p>
+                        {email.preview && <p style={{ fontSize: 12, color: "var(--text-tertiary, #636370)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{email.preview}</p>}
                       </div>
                     </div>
                   </button>
@@ -301,44 +318,49 @@ export default function MailDashboard() {
         </div>
 
         {/* Reader */}
-        <div ref={rRef} className="flex-1 flex flex-col overflow-y-auto bg-[#0a0a0a]">
+        <div ref={rRef} className="flex-1 flex flex-col overflow-y-auto" style={{ background: "var(--bg, #0A0A0B)" }}>
           {loadingBody ? (
             <div className="flex-1 flex items-center justify-center">
-              <Loader2 size={22} className="animate-spin text-white/20" />
+              <Loader2 size={22} className="animate-spin" style={{ color: "var(--text-tertiary, #636370)" }} />
             </div>
           ) : selected && sel ? (
             <>
               {/* Toolbar */}
-              <div className="flex items-center gap-1 px-6 py-2.5 border-b border-white/[0.04] flex-shrink-0">
-                <button onClick={reply} className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/[0.04] text-white/30 hover:text-white/50 text-sm transition">
+              <div className="flex items-center gap-1 px-6 py-2.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-subtle, #222226)" }}>
+                <button onClick={reply}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: "var(--radius-md, 12px)", cursor: "pointer", background: "none", border: "none", fontSize: 13, color: "var(--text-tertiary, #636370)", transition: "color 150ms" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "var(--text-secondary, #9A9AA8)"} onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary, #636370)"}>
                   <Reply size={14} /> Reply
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/[0.04] text-white/30 hover:text-white/50 text-sm transition">
+                <button
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: "var(--radius-md, 12px)", cursor: "pointer", background: "none", border: "none", fontSize: 13, color: "var(--text-tertiary, #636370)", transition: "color 150ms" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "var(--text-secondary, #9A9AA8)"} onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary, #636370)"}>
                   <Trash2 size={14} /> Delete
                 </button>
               </div>
               {/* Content */}
               <div className="flex-1 overflow-y-auto">
-                <div className="max-w-2xl mx-auto px-10 py-10">
+                <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px" }}>
                   {/* Header card */}
-                  <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-6 mb-8">
+                  <div style={{ background: "var(--bg-elevated, #141416)", border: "1px solid var(--border, #2A2A2E)", borderRadius: "var(--radius-xl, 20px)", padding: 24, marginBottom: 32 }}>
                     <div className="flex items-start gap-4">
                       <Avatar email={selected.from} size="lg" />
                       <div className="flex-1 min-w-0">
-                        <h1 className="font-outfit font-semibold text-xl text-white leading-tight mb-2">{selected.subject || "(no subject)"}</h1>
-                        <p className="text-sm text-white/50">{selected.from}</p>
-                        <p className="text-xs text-white/20 mt-1">{fullDate(selected.date)}</p>
+                        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 20, color: "var(--text, #F0F0F2)", lineHeight: 1.2, marginBottom: 8 }}>{selected.subject || "(no subject)"}</h1>
+                        <p style={{ fontSize: 14, color: "var(--text-secondary, #9A9AA8)" }}>{selected.from}</p>
+                        <p style={{ fontSize: 12, color: "var(--text-tertiary, #636370)", marginTop: 4 }}>{fullDate(selected.date)}</p>
                       </div>
                     </div>
                   </div>
                   {/* Body */}
                   <div>
                     {selected.html ? (
-                      <div className="prose prose-invert max-w-none text-sm leading-[1.8] text-white/65 [&_a]:text-blue-400 [&_a]:underline [&_a]:underline-offset-2 [&_img]:max-w-full [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: sanitize(selected.html) }} />
+                      <div className="prose prose-invert max-w-none text-sm leading-[1.8]" style={{ color: "rgba(255,255,255,0.6)" }}
+                        dangerouslySetInnerHTML={{ __html: sanitize(selected.html) }} />
                     ) : selected.body ? (
-                      <div className="text-white/55 whitespace-pre-line text-sm leading-[1.8]">{selected.body}</div>
+                      <div style={{ color: "rgba(255,255,255,0.5)", whiteSpace: "pre-line", fontSize: 14, lineHeight: 1.8 }}>{selected.body}</div>
                     ) : (
-                      <div className="text-white/15 text-sm italic">Empty message</div>
+                      <div style={{ color: "var(--text-tertiary, #636370)", fontSize: 14, fontStyle: "italic" }}>Empty message</div>
                     )}
                   </div>
                 </div>
@@ -347,15 +369,15 @@ export default function MailDashboard() {
           ) : emails.length > 0 && !sel ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <Inbox size={40} className="mx-auto mb-4 text-white/8" />
-                <p className="text-sm text-white/20">Select a message to read</p>
+                <Inbox size={40} className="mx-auto mb-4" style={{ color: "var(--text-tertiary, #636370)", opacity: 0.15 }} />
+                <p style={{ fontSize: 14, color: "var(--text-secondary, #9A9AA8)", opacity: 0.4 }}>Select a message to read</p>
               </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <Mail size={40} className="mx-auto mb-4 text-white/[0.06]" />
-                <p className="text-sm text-white/15">No message selected</p>
+                <Mail size={40} className="mx-auto mb-4" style={{ color: "var(--text-tertiary, #636370)", opacity: 0.1 }} />
+                <p style={{ fontSize: 14, color: "var(--text-tertiary, #636370)", opacity: 0.3 }}>No message selected</p>
               </div>
             </div>
           )}
@@ -364,21 +386,33 @@ export default function MailDashboard() {
 
       {/* Compose modal */}
       {compose && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-[#0e0e0e] border border-white/[0.06] rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-              <h2 className="text-sm font-outfit font-semibold">New message</h2>
-              <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }} className="text-white/20 hover:text-white/40 transition"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
+          <div className="w-full max-w-xl" style={{ background: "var(--bg-elevated, #141416)", border: "1px solid var(--border, #2A2A2E)", borderRadius: "var(--radius-xl, 20px)", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border, #2A2A2E)" }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 14 }}>New message</h2>
+              <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }}
+                style={{ padding: 4, cursor: "pointer", background: "none", border: "none", color: "var(--text-tertiary, #636370)", transition: "color 150ms" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--text, #F0F0F2)"} onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary, #636370)"}>
+                <X size={18} />
+              </button>
             </div>
-            <div className="p-6 space-y-4">
-              <input type="email" placeholder="To" value={to} onChange={e => setTo(e.target.value)} className="w-full bg-white/5 border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20" />
-              <input type="text" placeholder="Subject" value={subj} onChange={e => setSubj(e.target.value)} className="w-full bg-white/5 border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20" />
-              <textarea placeholder="Write your message..." value={body} onChange={e => setBody(e.target.value)} rows={10} className="w-full bg-white/5 border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 resize-none leading-relaxed" />
-              {sendErr && <p className="text-red-400 text-sm">{sendErr}</p>}
-              {sendOk && <p className="text-green-400 text-sm flex items-center gap-2"><CheckCircle2 size={14} />Sent!</p>}
-              <div className="flex justify-end gap-3 pt-1">
-                <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }} className="px-5 py-2.5 text-sm text-white/40 hover:text-white/60 transition">Cancel</button>
-                <button onClick={handleSend} disabled={sending || sendOk || !to || !body} className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded-xl hover:bg-white/90 transition disabled:opacity-40 flex items-center gap-2">
+            <div style={{ padding: 24 }}>
+              <div className="space-y-4">
+                <input type="email" placeholder="To" value={to} onChange={e => setTo(e.target.value)}
+                  style={{ width: "100%", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", borderRadius: "var(--radius-md, 12px)", padding: "10px 16px", fontSize: 14, color: "var(--text, #F0F0F2)", outline: "none", fontFamily: "var(--font-body)" }} />
+                <input type="text" placeholder="Subject" value={subj} onChange={e => setSubj(e.target.value)}
+                  style={{ width: "100%", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", borderRadius: "var(--radius-md, 12px)", padding: "10px 16px", fontSize: 14, color: "var(--text, #F0F0F2)", outline: "none", fontFamily: "var(--font-body)" }} />
+                <textarea placeholder="Write your message..." value={body} onChange={e => setBody(e.target.value)} rows={10}
+                  style={{ width: "100%", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", borderRadius: "var(--radius-md, 12px)", padding: "10px 16px", fontSize: 14, color: "var(--text, #F0F0F2)", outline: "none", fontFamily: "var(--font-body)", resize: "none", lineHeight: 1.6 }} />
+                {sendErr && <p style={{ color: "#f87171", fontSize: 13 }}>{sendErr}</p>}
+                {sendOk && <p style={{ color: "#34D399", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}><CheckCircle2 size={14} />Sent!</p>}
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }}
+                  style={{ padding: "10px 20px", fontSize: 14, color: "var(--text-secondary, #9A9AA8)", cursor: "pointer", background: "none", border: "none", borderRadius: "var(--radius-md, 12px)", transition: "color 150ms" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "var(--text, #F0F0F2)"} onMouseLeave={e => e.currentTarget.style.color = "var(--text-secondary, #9A9AA8)"}>Cancel</button>
+                <button onClick={handleSend} disabled={sending || sendOk || !to || !body}
+                  className="btn btn-primary btn-sm" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {sending ? <><Loader2 size={14} className="animate-spin" /> Sending...</> : <><Send size={14} /> Send</>}
                 </button>
               </div>

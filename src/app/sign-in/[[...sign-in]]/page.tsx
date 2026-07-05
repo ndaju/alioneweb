@@ -46,7 +46,7 @@ const clerkAppearance = {
 
 export default function SignInPage() {
   const [isMail, setIsMail] = useState(false);
-  useEffect(() => { setIsMail(window.location.hostname === "mail.alione.cc"); }, []);
+  useEffect(() => { setIsMail(window.location.hostname === "mail.alione.cc" || window.location.hostname === "alimail.alione.cc"); }, []);
   const redirectUrl = isMail ? "/" : "/dashboard";
 
   return (
@@ -58,7 +58,7 @@ export default function SignInPage() {
         <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
       </div>
       <div className="relative z-10 flex flex-col items-center gap-6">
-        <a href={isMail ? "https://mail.alione.cc" : "https://alione.cc"} className="flex items-center gap-3">
+        <a href={isMail ? "https://alimail.alione.cc" : "https://alione.cc"} className="flex items-center gap-3">
           <img src="/alione.png" alt="AliOne" className="w-10 h-10 rounded-xl" />
           <span className="text-white font-outfit text-xl font-semibold tracking-tight">
             {"AliOne Auth"}

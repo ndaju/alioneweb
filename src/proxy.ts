@@ -3,11 +3,15 @@ import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher(["/", "/sign-in(.*)", "/sign-up(.*)"]);
 
+const MAIL_HOSTS = ["mail.alione.cc", "alimail.alione.cc"];
+
 export default clerkMiddleware(async (auth, request) => {
   const host = request.headers.get("host") || "";
   const url = request.nextUrl;
 
-  if (host.startsWith("mail.alione.cc")) {
+  const isMailHost = MAIL_HOSTS.some(h => host.startsWith(h));
+
+  if (isMailHost) {
     // Let API and static files pass through
     if (
       url.pathname.startsWith("/api") ||
