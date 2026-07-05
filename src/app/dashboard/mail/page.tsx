@@ -211,7 +211,7 @@ export default function MailDashboard() {
               const Icon = item.icon;
               return (
                 <button key={item.key} onClick={() => setTab(item.key)}
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: "var(--radius-md, 12px)", fontSize: 13, transition: "all 150ms", cursor: "pointer", background: "none", border: "none", color: tab === item.key ? "var(--text, #F0F0F2)" : "var(--text-tertiary, #636370)", fontWeight: tab === item.key ? 500 : 400, background: tab === item.key ? "var(--bg-subtle, #1C1C1F)" : "transparent" }}>
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: "var(--radius-md, 12px)", fontSize: 13, transition: "all 150ms", cursor: "pointer", border: "none", color: tab === item.key ? "var(--text, #F0F0F2)" : "var(--text-tertiary, #636370)", fontWeight: tab === item.key ? 500 : 400, background: tab === item.key ? "var(--bg-subtle, #1C1C1F)" : "transparent" }}>
                   <Icon size={14} />
                   <span>{item.label}</span>
                 </button>
