@@ -10,50 +10,54 @@ const products = [
   {
     id: "search",
     title: "AliSearch",
-    description: "Anonymous search engine. No tracking. Just results.",
+    tagline: "Anonymous search. No tracking.",
     icon: Search,
     href: "https://alisearch.alione.cc",
-    online: true,
-    gradient: "from-emerald-500/10 to-teal-500/10",
+    available: true,
+    gradient: "from-emerald-500/20",
+    shadowColor: "shadow-emerald-500/5",
     iconBg: "bg-emerald-500/10",
     iconColor: "text-emerald-400",
-    borderGlow: "group-hover:border-emerald-500/30",
+    badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   },
   {
     id: "mail",
-    title: "Mail",
-    description: "Private email with your own @alione.cc address.",
+    title: "AliOne Mail",
+    tagline: "Private @alione.cc email.",
     icon: Mail,
     href: "https://mail.alione.cc",
-    online: true,
-    gradient: "from-blue-500/10 to-cyan-500/10",
+    available: true,
+    gradient: "from-blue-500/20",
+    shadowColor: "shadow-blue-500/5",
     iconBg: "bg-blue-500/10",
     iconColor: "text-blue-400",
-    borderGlow: "group-hover:border-blue-500/30",
+    badge: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   },
   {
     id: "drive",
     title: "AliDrive",
-    description: "Cloud storage. Store, share, and sync your files.",
+    tagline: "Cloud storage for your files.",
     icon: HardDrive,
     href: "#",
-    online: false,
-    gradient: "from-amber-500/10 to-orange-500/10",
+    available: false,
+    gradient: "from-amber-500/20",
+    shadowColor: "shadow-amber-500/5",
     iconBg: "bg-amber-500/10",
     iconColor: "text-amber-400",
-    borderGlow: "",
+    badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   },
   {
     id: "photos",
     title: "AliPhotos",
-    description: "Backup and relive your memories. Smart albums.",
+    tagline: "Your memories, organized.",
     icon: Image,
     href: "#",
-    online: false,
-    gradient: "from-purple-500/10 to-pink-500/10",
+    available: false,
+    gradient: "from-purple-500/20",
+    shadowColor: "shadow-purple-500/5",
     iconBg: "bg-purple-500/10",
     iconColor: "text-purple-400",
-    borderGlow: "",
+    badge: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   },
 ];
 
@@ -80,58 +84,51 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute w-[1200px] h-[1200px] rounded-full bg-blue-500 opacity-[0.008] blur-[250px] -top-1/2 -left-1/4" />
-        <div className="absolute w-[900px] h-[900px] rounded-full bg-purple-500 opacity-[0.008] blur-[220px] -bottom-1/2 -right-1/4" />
-        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
+        <div className="absolute w-[1200px] h-[1200px] rounded-full bg-blue-500 opacity-[0.01] blur-[250px] -top-1/2 -left-1/4" />
+        <div className="absolute w-[900px] h-[900px] rounded-full bg-purple-500 opacity-[0.01] blur-[220px] -bottom-1/2 -right-1/4" />
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col">
-        <header className="border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-6 sm:px-8 h-16 flex items-center justify-between">
+        <header className="border-b border-white/[0.05] bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/[0.08] flex items-center justify-center">
-                <img src="/alione.png" alt="AliOne" className="w-5 h-5" />
-              </div>
-              <span className="text-lg font-outfit font-semibold tracking-tight">AliOne</span>
+              <img src="/alione.png" alt="AliOne" className="w-6 h-6" />
+              <span className="text-base font-outfit font-semibold tracking-tight">AliOne</span>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-white/30 hidden md:block">{email}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-white/25 hidden md:block">{email}</span>
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-white/12 to-white/5 border border-white/[0.08] flex items-center justify-center text-sm font-medium text-white/70 shadow-lg shadow-black/20">{initial}</div>
-                <button onClick={() => signOut()} className="p-2 rounded-lg hover:bg-white/5 text-white/20 hover:text-white/50 transition-all" title="Sign out">
-                  <LogOut size={15} />
+                <div className="w-8 h-8 rounded-full bg-white/5 border border-white/[0.08] flex items-center justify-center text-xs font-medium text-white/60">{initial}</div>
+                <button onClick={() => signOut()} className="p-1.5 rounded-lg hover:bg-white/5 text-white/20 hover:text-white/40 transition-all" title="Sign out">
+                  <LogOut size={14} />
                 </button>
               </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 flex items-center justify-center px-6 sm:px-8 py-16">
-          <div className="w-full max-w-3xl">
-            <div className="text-center mb-14">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-full text-xs text-white/40 mb-5">
-                <Sparkles size={12} />
-                <span>Welcome back, {displayName.split(" ")[0]}</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-outfit font-bold tracking-tight mb-3">
-                Your{" "}
-                <span className="bg-gradient-to-r from-white via-white/80 to-white/50 bg-clip-text text-transparent">ecosystem</span>
+        <main className="flex-1 flex items-center justify-center px-5 py-12">
+          <div className="w-full max-w-2xl">
+            <div className="mb-12">
+              <p className="text-xs text-white/20 tracking-widest uppercase mb-4">Welcome back, {displayName.split(" ")[0]}</p>
+              <h1 className="text-3xl md:text-4xl font-outfit font-bold tracking-tight">
+                Your <span className="bg-gradient-to-r from-white via-white/80 to-white/50 bg-clip-text text-transparent">ecosystem</span>
               </h1>
-              <p className="text-white/30 text-base max-w-md mx-auto">Choose a service to continue.</p>
+              <p className="text-sm text-white/25 mt-1">Choose a service to get started.</p>
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2.5">
               {products.map((product, i) => {
                 const Icon = product.icon;
                 return (
                   <div
                     key={product.id}
-                    className={`group relative rounded-2xl transition-all duration-500 ${
-                      mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-                    } ${product.online ? "cursor-pointer" : "cursor-not-allowed"}`}
-                    style={{ transitionDelay: `${i * 0.08}s` }}
+                    className={`group transition-all duration-500 ${
+                      mounted ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+                    }`}
+                    style={{ transitionDelay: `${i * 0.06}s` }}
                   >
-                    {product.online ? (
+                    {product.available ? (
                       <Link href={product.href} className="block">
                         <CardContent product={product} Icon={Icon} />
                       </Link>
@@ -146,9 +143,9 @@ export default function DashboardPage() {
         </main>
 
         <footer className="border-t border-white/[0.04]">
-          <div className="max-w-3xl mx-auto px-6 sm:px-8 h-14 flex items-center justify-between">
-            <p className="text-xs text-white/15">AliOne &mdash; {new Date().getFullYear()}</p>
-            <a href="https://alione.cc" className="text-xs text-white/20 hover:text-white/40 transition">alione.cc</a>
+          <div className="max-w-2xl mx-auto px-5 h-10 flex items-center justify-between">
+            <p className="text-[11px] text-white/15">AliOne &mdash; {new Date().getFullYear()}</p>
+            <a href="https://alione.cc" className="text-[11px] text-white/20 hover:text-white/40 transition">alione.cc</a>
           </div>
         </footer>
       </div>
@@ -158,37 +155,33 @@ export default function DashboardPage() {
 
 function CardContent({ product, Icon }: { product: typeof products[0]; Icon: any }) {
   return (
-    <div className={`relative pl-6 pr-5 py-5 bg-[#0a0a0a] border rounded-2xl transition-all duration-300 ${
-      product.online
-        ? `border-white/[0.08] ${product.borderGlow} hover:shadow-2xl hover:shadow-black/40 hover:-translate-y-0.5`
-        : "border-white/[0.05] opacity-40"
+    <div className={`relative px-5 py-4 bg-[#0a0a0a] border border-white/[0.06] rounded-xl transition-all duration-200 ${
+      product.available
+        ? "hover:border-white/15 hover:bg-[#0c0c0c] active:scale-[0.99]"
+        : "opacity-30 cursor-not-allowed"
     }`}>
-      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl ${product.gradient}`} />
-      <div className="relative z-10 flex items-center gap-5">
-        <div className={`shrink-0 w-12 h-12 rounded-xl ${product.iconBg} border border-white/[0.08] flex items-center justify-center group-hover:scale-105 transition-transform duration-300`}>
-          <Icon size={22} className={product.iconColor} />
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl bg-gradient-to-r ${product.gradient} to-transparent`} />
+      <div className="relative z-10 flex items-center gap-4">
+        <div className={`shrink-0 w-11 h-11 rounded-xl ${product.iconBg} border border-white/[0.06] flex items-center justify-center`}>
+          <Icon size={20} className={product.iconColor} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
-            <h3 className="text-lg font-outfit font-semibold">{product.title}</h3>
-            <span className={`shrink-0 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border tracking-wide ${
-              product.online
-                ? "text-green-400 bg-green-500/10 border-green-500/20"
-                : "text-amber-400 bg-amber-500/10 border-amber-500/20"
-            }`}>
-              {product.online ? "Available" : "Coming Soon"}
+          <div className="flex items-center gap-2.5">
+            <h3 className="text-sm font-outfit font-semibold">{product.title}</h3>
+            <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border ${product.badge}`}>
+              {product.available ? "Live" : "Soon"}
             </span>
           </div>
-          <p className="text-sm text-white/35 mt-0.5 truncate">{product.description}</p>
+          <p className="text-xs text-white/30 mt-0.5">{product.tagline}</p>
         </div>
-        {product.online && (
-          <div className="shrink-0 w-9 h-9 rounded-xl bg-white/5 border border-white/[0.06] flex items-center justify-center group-hover:bg-white/10 transition-colors">
-            <ArrowUpRight size={16} className="text-white/30 group-hover:text-white/60 transition-colors" />
+        {product.available && (
+          <div className="shrink-0 w-8 h-8 rounded-lg bg-white/5 border border-white/[0.06] flex items-center justify-center group-hover:bg-white/[0.08] group-hover:border-white/10 transition-all">
+            <ArrowUpRight size={14} className="text-white/25 group-hover:text-white/50 transition-colors" />
           </div>
         )}
-        {!product.online && (
-          <div className="shrink-0 w-9 h-9 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center">
-            <Lock size={14} className="text-white/15" />
+        {!product.available && (
+          <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center">
+            <Lock size={12} className="text-white/15" />
           </div>
         )}
       </div>
