@@ -57,11 +57,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable} ${plusJakarta.variable}`}>
       <body>
-        <div className="bg-amber-500/10 border-b border-amber-500/20" style={{ position: "relative", zIndex: 10000 }}>
-          <p className="text-[11px] text-amber-400/70 text-center py-1.5 px-4">
-            Preview environment &mdash; not for public use. AliOne is not responsible for any content or misuse.
-          </p>
-        </div>
         <ClerkProvider>
           {children}
         </ClerkProvider>
