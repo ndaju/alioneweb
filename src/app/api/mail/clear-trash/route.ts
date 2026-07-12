@@ -33,7 +33,16 @@ export async function POST(req: Request) {
     if (total > 0) {
       const lock = await imap.getMailboxLock("Trash");
       try {
-        await imap.messageDelete("*");
+        // Collect all UIDs first
+        const uids: number[] = [];
+        for await (const msg of imap.fetch("1:*", { uid: true })) {
+          uids.push(msg.uid);
+        }
+        // Mark all as deleted and expunge
+        if (uids.length > 0) {
+          await imap.messageFlagsAdd(uids, ["\\Deleted"]);
+          await imap.mailboxClose();
+        }
       } finally {
         lock.release();
       }

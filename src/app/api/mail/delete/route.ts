@@ -36,13 +36,10 @@ export async function POST(req: Request) {
 
     try {
       if (!permanent) {
-        // Move to trash: copy then delete from source
         await imap.messageCopy(uids, "Trash");
       }
-      // messageDelete marks \Deleted and expunges
-      await imap.messageDelete(uids);
-    } catch (err) {
-      // ignore
+      await imap.messageFlagsAdd(uids, ["\\Deleted"]);
+      await imap.mailboxClose();
     } finally {
       lock.release();
     }
