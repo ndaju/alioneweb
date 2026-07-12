@@ -1225,3 +1225,18 @@ a.product-card { cursor: pointer; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-brand { grid-column: span 1; }
 }
+
+/* === Mail App Responsive === */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+@media (max-width: 900px) {
+  .mail-sidebar { position: fixed; left: 0; top: 64px; bottom: 0; z-index: 40; transform: translateX(-100%); transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1); width: 260px; }
+  .mail-sidebar.open { transform: translateX(0); }
+  .mail-list-panel { flex: 1; min-width: 0; width: auto; }
+  .mail-sidebar-toggle { display: flex !important; }
+}
+
+@media (max-width: 600px) {
+  .mail-list-panel { width: 100% !important; border-right: none !important; }
+}

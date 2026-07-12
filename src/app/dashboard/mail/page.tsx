@@ -1,280 +1,405 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { Inbox, Send, FileText, Settings, Trash2, Reply, Loader2, CheckCircle2, Mail, X, PenBox, RefreshCw, LogOut, Archive } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
+import {
+  Inbox, Send, FileText, Trash2, Reply, Loader2, CheckCircle2,
+  Mail, X, PenBox, RefreshCw, LogOut, Search, AlertCircle,
+  Menu, Paperclip, ArrowLeft,
+} from "lucide-react";
 
-type Email = { id: number; from: string; fromName: string; subject: string; preview: string; body: string; html: string; date: string; unread: boolean; seen: boolean; };
-type NavItem = "inbox" | "sent" | "drafts" | "settings";
+type Email = { id: number; from: string; fromName: string; subject: string; preview: string; body: string; html: string; date: string; unread: boolean; seen: boolean };
+type Folder = "inbox" | "sent" | "drafts" | "trash";
+type Rd = { body: string; html: string; from: string; subject: string; date: string };
 
-const NAV_ITEMS: { key: NavItem; label: string; icon: any }[] = [
+const FOLDERS: { key: Folder; label: string; icon: typeof Inbox }[] = [
   { key: "inbox", label: "Inbox", icon: Inbox },
   { key: "sent", label: "Sent", icon: Send },
   { key: "drafts", label: "Drafts", icon: FileText },
-  { key: "settings", label: "Settings", icon: Settings },
+  { key: "trash", label: "Trash", icon: Trash2 },
 ];
+
+const MAILBOX_MAP: Record<Folder, string> = { inbox: "INBOX", sent: "Sent", drafts: "Drafts", trash: "Trash" };
 
 const COLORS = [
-  "from-sky-400/30 to-blue-500/30", "from-fuchsia-400/30 to-purple-500/30",
-  "from-amber-400/30 to-orange-500/30", "from-emerald-400/30 to-teal-500/30",
-  "from-rose-400/30 to-pink-500/30", "from-violet-400/30 to-indigo-500/30",
+  ["#3B82F6", "#60A5FA"], ["#8B5CF6", "#A78BFA"], ["#F59E0B", "#FBBF24"],
+  ["#10B981", "#34D399"], ["#EF4444", "#F87171"], ["#EC4899", "#F472B6"],
+  ["#6366F1", "#818CF8"], ["#14B8A6", "#2DD4BF"],
 ];
 
-function h(e: string) { let n = 0; for (let i = 0; i < e.length; i++) n = ((n << 5) - n + e.charCodeAt(i)) | 0; return Math.abs(n); }
+function hs(s: string) { let n = 0; for (let i = 0; i < s.length; i++) n = ((n << 5) - n + s.charCodeAt(i)) | 0; return Math.abs(n); }
+function ac(email: string) { return COLORS[hs(email) % COLORS.length]; }
+function init(name: string, email: string) { return (name || email || "?")[0].toUpperCase(); }
 
-function Avatar({ email, name, size = "md" }: { email: string; name?: string; size?: "sm" | "md" | "lg" }) {
-  const c = COLORS[h(email) % COLORS.length];
-  const l = (name || email || "?")[0].toUpperCase();
-  const sizes = { sm: "w-9 h-9 text-xs rounded-lg", md: "w-10 h-10 text-sm rounded-xl", lg: "w-12 h-12 text-base rounded-xl" };
-  return <div className={`${sizes[size]} bg-gradient-to-br ${c} border border-white/[0.08] flex items-center justify-center font-semibold flex-shrink-0 text-white/80`}>{l}</div>;
+function rDate(d: string) {
+  if (!d) return "";
+  const diff = Date.now() - new Date(d).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "now"; if (m < 60) return m + "m";
+  const h = Math.floor(m / 60); if (h < 24) return h + "h";
+  const dd = Math.floor(h / 24); if (dd < 7) return dd + "d";
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function fDate(d: string) {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function dn(e: Email) { return (e.fromName && e.fromName !== e.from) ? e.fromName : e.from.split("@")[0]; }
+
+function clean(html: string) {
+  return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/on\w+="[^"]*"/gi, "").replace(/on\w+='[^']*'/gi, "")
+    .replace(/style="[^"]*position:\s*fixed[^"]*"/gi, "");
+}
+
+function Avatar({ email, name, size = 40 }: { email: string; name?: string; size?: number }) {
+  const [bg, fg] = ac(email);
+  const l = init(name || "", email);
+  return (
+    <div style={{ width: size, height: size, borderRadius: size * 0.3, background: `linear-gradient(135deg, ${bg}40, ${fg}30)`, border: `1px solid ${bg}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.38, fontWeight: 600, color: fg, flexShrink: 0, fontFamily: "var(--font-display), sans-serif" }}>{l}</div>
+  );
 }
 
 function Skel() {
   return (
-    <div className="flex gap-4 p-5 animate-pulse">
-      <div className="w-11 h-11 rounded-xl bg-white/[0.04] flex-shrink-0" />
-      <div className="flex-1 space-y-3 pt-1">
-        <div className="flex justify-between"><div className="h-4 rounded-md bg-white/[0.05] w-36" /><div className="h-3.5 rounded-md bg-white/[0.04] w-12" /></div>
-        <div className="h-4 rounded-md bg-white/[0.04] w-3/4" />
-        <div className="h-3.5 rounded-md bg-white/[0.03] w-1/2" />
+    <div style={{ display: "flex", gap: 16, padding: "20px 24px" }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.04)", flexShrink: 0 }} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10, paddingTop: 2 }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}><div style={{ width: 120, height: 14, borderRadius: 6, background: "rgba(255,255,255,0.06)" }} /><div style={{ width: 36, height: 12, borderRadius: 6, background: "rgba(255,255,255,0.04)" }} /></div>
+        <div style={{ width: "70%", height: 14, borderRadius: 6, background: "rgba(255,255,255,0.05)" }} />
+        <div style={{ width: "45%", height: 12, borderRadius: 6, background: "rgba(255,255,255,0.03)" }} />
       </div>
     </div>
   );
 }
 
-type Rd = { body: string; html: string; from: string; subject: string; date: string };
+function ClaimScreen({ onSuccess }: { onSuccess: (email: string) => void }) {
+  const [uname, setUname] = useState("");
+  const [pw, setPw] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState(false);
+
+  const claim = async () => {
+    if (!uname || !pw) return;
+    setLoading(true); setError("");
+    try {
+      const r = await fetch("/api/claim-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: uname, domain: "alione.cc", password: pw }) });
+      const d = await r.json();
+      if (d.success) { setOk(true); onSuccess(d.email); } else setError(d.error || "Failed");
+    } catch { setError("Connection error"); } finally { setLoading(false); }
+  };
+
+  const inputStyle: React.CSSProperties = { width: "100%", background: "#1C1C1F", border: "1px solid #2A2A2E", borderRadius: 14, padding: "14px 18px", fontSize: 16, color: "#F0F0F2", outline: "none", transition: "border-color 200ms", boxSizing: "border-box" as const };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0A0A0B", display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}>
+      <div style={{ width: "100%", maxWidth: 440 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 48 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, border: "1px solid #2A2A2E", background: "#141416", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <img src="/alione.png" alt="" style={{ width: 28, height: 28 }} />
+          </div>
+          <div>
+            <div style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 22, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.02em" }}>AliMail</div>
+            <div style={{ fontSize: 13, color: "#636370", marginTop: 2 }}>Private email by AliOne</div>
+          </div>
+        </div>
+        <h1 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 32, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.03em", marginBottom: 12, lineHeight: 1.1 }}>Claim your email</h1>
+        <p style={{ fontSize: 16, color: "#9A9AA8", marginBottom: 40, lineHeight: 1.6 }}>Choose a username for your @alione.cc address.</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#9A9AA8", marginBottom: 8 }}>Email address</label>
+            <div style={{ display: "flex" }}>
+              <input type="text" placeholder="username" value={uname} onChange={e => setUname(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
+                style={{ ...inputStyle, borderRight: "none", borderRadius: "14px 0 0 14px", fontFamily: "'JetBrains Mono', monospace" }} />
+              <div style={{ background: "#141416", border: "1px solid #2A2A2E", borderRadius: "0 14px 14px 0", padding: "14px 18px", fontSize: 16, color: "#636370", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>@alione.cc</div>
+            </div>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#9A9AA8", marginBottom: 8 }}>Password</label>
+            <input type="password" placeholder="Create a strong password" value={pw} onChange={e => setPw(e.target.value)} style={inputStyle} />
+          </div>
+          {error && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 12, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#F87171", fontSize: 14 }}><AlertCircle size={16} />{error}</div>}
+          {ok && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 12, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", color: "#34D399", fontSize: 14 }}><CheckCircle2 size={16} />{uname}@alione.cc is yours!</div>}
+          <button onClick={claim} disabled={loading || ok || !uname || !pw}
+            style={{ width: "100%", padding: "16px 24px", borderRadius: 14, border: "none", background: "#F0F0F2", color: "#0A0A0B", fontSize: 16, fontWeight: 600, fontFamily: "var(--font-display), sans-serif", cursor: loading || ok ? "not-allowed" : "pointer", opacity: loading || ok || !uname || !pw ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            {loading ? <><Loader2 size={18} className="animate-spin" /> Creating...</> : ok ? <><CheckCircle2 size={18} /> Claimed!</> : "Claim Email"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComposeModal({ open, onClose, onSent, initialTo, initialSubject, myEmail }: { open: boolean; onClose: () => void; onSent: () => void; initialTo: string; initialSubject: string; myEmail: string }) {
+  const [to, setTo] = useState(initialTo);
+  const [subject, setSubject] = useState(initialSubject);
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => { setTo(initialTo); setSubject(initialSubject); setBody(""); setError(""); setSent(false); }, [initialTo, initialSubject, open]);
+  useEffect(() => { if (open) setTimeout(() => taRef.current?.focus(), 100); }, [open]);
+
+  if (!open) return null;
+
+  const send = async () => {
+    if (!to || !body) return;
+    setSending(true); setError("");
+    try {
+      const r = await fetch("/api/mail/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to, subject, text: body }) });
+      const d = await r.json();
+      if (d.success) { setSent(true); setTimeout(() => { onSent(); onClose(); }, 1200); } else setError(d.error || "Failed");
+    } catch { setError("Connection error"); } finally { setSending(false); }
+  };
+
+  const row: React.CSSProperties = { display: "flex", alignItems: "center", padding: "14px 28px", borderBottom: "1px solid #1C1C1F", gap: 10 };
+  const label: React.CSSProperties = { fontSize: 14, color: "#636370", minWidth: 50, fontWeight: 500 };
+  const field: React.CSSProperties = { flex: 1, background: "transparent", border: "none", fontSize: 15, color: "#F0F0F2", outline: "none", fontFamily: "inherit" };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }} />
+      <div onClick={e => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 640, background: "#111113", border: "1px solid #2A2A2E", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.5)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px", borderBottom: "1px solid #2A2A2E" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}><PenBox size={18} style={{ color: "#9A9AA8" }} /><span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 17, fontWeight: 600, color: "#F0F0F2" }}>New message</span></div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: "none", background: "transparent", color: "#636370", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={18} /></button>
+        </div>
+        <div style={row}><span style={label}>From</span><span style={{ ...field, fontFamily: "'JetBrains Mono', monospace", color: "#9A9AA8" }}>{myEmail}</span></div>
+        <div style={row}><span style={label}>To</span><input type="email" placeholder="recipient@example.com" value={to} onChange={e => setTo(e.target.value)} style={{ ...field, fontFamily: "'JetBrains Mono', monospace" }} /></div>
+        <div style={row}><span style={label}>Subject</span><input type="text" placeholder="Subject" value={subject} onChange={e => setSubject(e.target.value)} style={field} /></div>
+        <div style={{ padding: "20px 28px" }}><textarea ref={taRef} placeholder="Write your message..." value={body} onChange={e => setBody(e.target.value)} rows={14} style={{ width: "100%", background: "transparent", border: "none", fontSize: 15, lineHeight: 1.8, color: "#F0F0F2", outline: "none", resize: "none", fontFamily: "inherit" }} /></div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 28px", borderTop: "1px solid #2A2A2E" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid #2A2A2E", background: "transparent", color: "#636370", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Paperclip size={16} /></button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {error && <span style={{ fontSize: 13, color: "#F87171" }}>{error}</span>}
+            {sent && <span style={{ fontSize: 13, color: "#34D399", display: "flex", alignItems: "center", gap: 6 }}><CheckCircle2 size={14} />Sent!</span>}
+            <button onClick={onClose} style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "transparent", color: "#9A9AA8", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>Cancel</button>
+            <button onClick={send} disabled={sending || sent || !to || !body} style={{ padding: "10px 28px", borderRadius: 10, border: "none", background: "#F0F0F2", color: "#0A0A0B", fontSize: 14, fontWeight: 600, cursor: sending || sent || !to || !body ? "not-allowed" : "pointer", opacity: sending || sent || !to || !body ? 0.4 : 1, display: "flex", alignItems: "center", gap: 8 }}>
+              {sending ? <><Loader2 size={15} className="animate-spin" /> Sending...</> : <><Send size={15} /> Send</>}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UserMenu({ user, myEmail, signOut }: { user: any; myEmail: string | null; signOut: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, []);
+  const name = user?.fullName || myEmail?.split("@")[0] || "User";
+  const initial = name[0].toUpperCase();
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button onClick={() => setOpen(!open)} style={{ width: 38, height: 38, borderRadius: 12, background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.04))", border: "1px solid #2A2A2E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, color: "#9A9AA8", cursor: "pointer", fontFamily: "var(--font-display), sans-serif" }}>{initial}</button>
+      {open && (
+        <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 8, width: 260, background: "#141416", border: "1px solid #2A2A2E", borderRadius: 16, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)", zIndex: 200 }}>
+          <div style={{ padding: "18px 20px", borderBottom: "1px solid #2A2A2E" }}>
+            <div style={{ fontSize: 15, fontWeight: 500, color: "#F0F0F2", marginBottom: 4 }}>{name}</div>
+            <div style={{ fontSize: 13, color: "#636370", fontFamily: "'JetBrains Mono', monospace" }}>{myEmail || "No email"}</div>
+          </div>
+          <div style={{ padding: 6 }}>
+            <a href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", textDecoration: "none" }}><Inbox size={16} />Dashboard</a>
+            <button onClick={() => { signOut(); setOpen(false); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}><LogOut size={16} />Sign out</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MailDashboard() {
   const { isSignedIn } = useAuth();
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
 
-  const [tab, setTab] = useState<NavItem>("inbox");
-  const [sel, setSel] = useState<number | null>(null);
-  const [claimedEmail, setClaimedEmail] = useState<string | null>(null);
-  const [claiming, setClaiming] = useState(false);
-  const [claimErr, setClaimErr] = useState("");
-  const [claimOk, setClaimOk] = useState(false);
-  const [uname, setUname] = useState("");
-  const [pw, setPw] = useState("");
+  const [folder, setFolder] = useState<Folder>("inbox");
+  const [selId, setSelId] = useState<number | null>(null);
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [rd, setRd] = useState<Rd | null>(null);
   const [loadingBody, setLoadingBody] = useState(false);
-  const [compose, setCompose] = useState(false);
-  const [to, setTo] = useState("");
-  const [subj, setSubj] = useState("");
-  const [body, setBody] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sendErr, setSendErr] = useState("");
-  const [sendOk, setSendOk] = useState(false);
-  const rRef = useRef<HTMLDivElement>(null);
+  const [claimedEmail, setClaimedEmail] = useState<string | null>(null);
+  const [needClaim, setNeedClaim] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [composeTo, setComposeTo] = useState("");
+  const [composeSubj, setComposeSubj] = useState("");
+  const [searchQ, setSearchQ] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const readerRef = useRef<HTMLDivElement>(null);
 
-  const metaEmail = user?.publicMetadata?.claimedEmail as string | undefined;
+  const metaEmail = useMemo(() => {
+    if (!user) return undefined;
+    return (user.publicMetadata as Record<string, unknown>)?.claimedEmail as string | undefined;
+  }, [user]);
+
   const myEmail = claimedEmail || metaEmail || null;
-  const needClaim = !myEmail && !claimOk;
-  const mb: Record<NavItem, string> = { inbox: "INBOX", sent: "Sent", drafts: "Drafts", settings: "INBOX" };
 
-  const fetchList = useCallback(async () => {
-    setLoading(true); setError(""); setSel(null); setRd(null);
-    const m = mb[tab];
-    if (!m || tab === "settings") { setLoading(false); setEmails([]); return; }
+  const filtered = useMemo(() => {
+    if (!searchQ.trim()) return emails;
+    const q = searchQ.toLowerCase();
+    return emails.filter(e => e.subject.toLowerCase().includes(q) || e.from.toLowerCase().includes(q) || e.fromName.toLowerCase().includes(q) || e.preview.toLowerCase().includes(q));
+  }, [emails, searchQ]);
+
+  const unreadCount = useMemo(() => emails.filter(e => e.unread).length, [emails]);
+
+  const fetchEmails = useCallback(async () => {
+    setLoading(true); setError(""); setSelId(null); setRd(null);
+    const mb = MAILBOX_MAP[folder];
+    if (!mb) { setLoading(false); setEmails([]); return; }
     try {
-      const r = await fetch(`/api/mail/list?mailbox=${encodeURIComponent(m)}`);
+      const r = await fetch(`/api/mail/list?mailbox=${encodeURIComponent(mb)}`);
       const d = await r.json();
-      if (d.emails) setEmails(d.emails.map((e: any) => ({ id: e.id, from: e.from, fromName: e.fromName || e.from, subject: e.subject, preview: e.preview || "", body: "", html: "", date: fmt(e.date), unread: !e.seen, seen: e.seen })));
+      if (d.emails) setEmails(d.emails.map((e: any) => ({ id: e.id, from: e.from, fromName: e.fromName || e.from, subject: e.subject, preview: e.preview || "", body: "", html: "", date: e.date, unread: !e.seen, seen: e.seen })));
       else if (d.error) setError(d.error);
-    } catch { setError("Connection error"); } finally { setLoading(false); }
-  }, [tab]);
+    } catch { setError("Could not connect to mail server"); } finally { setLoading(false); }
+  }, [folder]);
 
-  useEffect(() => { if (myEmail && isLoaded) fetchList(); }, [myEmail, isLoaded, fetchList]);
+  useEffect(() => { if (myEmail && isLoaded) fetchEmails(); }, [myEmail, isLoaded, fetchEmails]);
+
   useEffect(() => {
-    if (!sel || !isLoaded || !myEmail) return;
+    if (!selId || !isLoaded || !myEmail) return;
     setLoadingBody(true); setRd(null);
-    fetch(`/api/mail/read?uid=${sel}`).then(r => r.json()).then(d => {
-      if (d.body || d.html) { setRd(d); setEmails(p => p.map(e => e.id === sel ? { ...e, body: d.body, html: d.html, unread: false } : e)); }
+    fetch(`/api/mail/read?uid=${selId}`).then(r => r.json()).then(d => {
+      if (d.body || d.html) { setRd(d); setEmails(p => p.map(e => e.id === selId ? { ...e, body: d.body, html: d.html, unread: false } : e)); }
     }).catch(() => {}).finally(() => setLoadingBody(false));
-  }, [sel, isLoaded, myEmail]);
-  useEffect(() => { if (rRef.current) rRef.current.scrollTop = 0; }, [sel]);
+  }, [selId, isLoaded, myEmail]);
+
+  useEffect(() => { if (readerRef.current) readerRef.current.scrollTop = 0; }, [selId]);
+  useEffect(() => { if (isLoaded && !metaEmail && !claimedEmail) setNeedClaim(true); else setNeedClaim(false); }, [isLoaded, metaEmail, claimedEmail]);
+
+  const selectFolder = (f: Folder) => { setFolder(f); setSidebarOpen(false); };
 
   if (!isSignedIn) return null;
-  if (!isLoaded) return <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center"><Loader2 size={28} className="animate-spin text-white/20" /></div>;
-
-  const selected = rd;
-
-  const handleClaim = async () => {
-    if (!uname || !pw) return;
-    setClaiming(true); setClaimErr(""); setClaimOk(false);
-    try {
-      const r = await fetch("/api/claim-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: uname, domain: "alione.cc", password: pw }) });
-      const d = await r.json();
-      if (d.success) { setClaimedEmail(d.email); setClaimOk(true); } else setClaimErr(d.error || "Failed");
-    } catch { setClaimErr("Connection error"); } finally { setClaiming(false); }
-  };
-
-  const handleSend = async () => {
-    if (!to || !body) return;
-    setSending(true); setSendErr(""); setSendOk(false);
-    try {
-      const r = await fetch("/api/mail/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to, subject: subj, text: body }) });
-      const d = await r.json();
-      if (d.success) { setSendOk(true); setTimeout(() => { setCompose(false); setTo(""); setSubj(""); setBody(""); setSendOk(false); }, 1500); }
-      else setSendErr(d.error || "Failed");
-    } catch { setSendErr("Connection error"); } finally { setSending(false); }
-  };
+  if (!isLoaded) return <div style={{ minHeight: "100vh", background: "#0A0A0B", display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={32} className="animate-spin" style={{ color: "rgba(255,255,255,0.15)" }} /></div>;
+  if (needClaim) return <ClaimScreen onSuccess={(e) => { setClaimedEmail(e); setNeedClaim(false); }} />;
 
   const reply = () => {
-    if (!selected || !sel) return;
-    const e = emails.find(x => x.id === sel); if (!e) return;
-    setTo(e.from); setSubj(e.subject.startsWith("Re:") ? e.subject : `Re: ${e.subject}`); setCompose(true);
+    if (!rd || !selId) return;
+    const e = emails.find(x => x.id === selId); if (!e) return;
+    setComposeTo(e.from);
+    setComposeSubj(e.subject.startsWith("Re:") ? e.subject : "Re: " + e.subject);
+    setComposeOpen(true);
   };
 
-  const isMail = tab !== "settings";
-  function sanitize(html: string) { return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").replace(/on\w+="[^"]*"/gi, "").replace(/on\w+='[^']*'/gi, ""); }
-  function dn(e: Email) { return (e.fromName && e.fromName !== e.from) ? e.fromName : e.from; }
-
-  if (needClaim) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-11 h-11 rounded-xl border border-[#2A2A2E] bg-[#141416] flex items-center justify-center">
-              <img src="/alione.png" className="w-6 h-6" />
-            </div>
-            <span className="font-outfit text-xl font-bold">AliOne Mail</span>
-          </div>
-          <h1 className="font-outfit text-3xl font-bold mb-2">Claim your email</h1>
-          <p className="text-white/40 text-base mb-8">Choose your @alione.cc address</p>
-          <div className="space-y-5">
-            <div>
-              <label className="text-sm text-white/40 mb-2 block font-medium">Email</label>
-              <div className="flex">
-                <input type="text" placeholder="username" value={uname} onChange={e => setUname(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))} className="flex-1 bg-[#1C1C1F] border border-[#2A2A2E] rounded-l-xl px-4 py-3 text-base text-white placeholder:text-white/20 focus:outline-none font-mono" />
-                <span className="bg-[#1C1C1F] border border-l-0 border-[#2A2A2E] rounded-r-xl px-4 py-3 text-white/40 text-base font-mono">@alione.cc</span>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm text-white/40 mb-2 block font-medium">Password</label>
-              <input type="password" placeholder="Strong password" value={pw} onChange={e => setPw(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-4 py-3 text-base text-white placeholder:text-white/20 focus:outline-none" />
-            </div>
-            {claimErr && <p className="text-red-400 text-sm">{claimErr}</p>}
-            <button onClick={handleClaim} disabled={claiming || claimOk || !uname || !pw} className="w-full bg-white text-black text-base font-medium rounded-xl py-3 hover:bg-white/90 transition disabled:opacity-40 flex items-center justify-center gap-2">
-              {claiming ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : claimOk ? <><CheckCircle2 size={16} /> Claimed!</> : "Claim Email"}
-            </button>
-            {claimOk && <p className="text-green-400 text-sm text-center">✓ {myEmail} is yours!</p>}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const inputBg = "#1C1C1F";
+  const border = "#2A2A2E";
+  const borderSubtle = "#1C1C1F";
 
   return (
-    <div className="h-screen bg-[#0A0A0B] text-white flex flex-col overflow-hidden">
+    <div style={{ height: "100vh", background: "#0A0A0B", color: "#F0F0F2", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif" }}>
 
-      {/* Header */}
-      <header className="h-[72px] flex items-center justify-between px-6 flex-shrink-0 border-b border-[#2A2A2E]" style={{ background: "rgba(14,14,16,0.9)", backdropFilter: "blur(20px)" }}>
-        <div className="flex items-center gap-6">
-          <a href="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-xl border border-[#2A2A2E] bg-[#1C1C1F] flex items-center justify-center">
-              <img src="/alione.png" className="w-5 h-5" />
-            </div>
-            <span className="text-base font-outfit font-semibold text-white/50 group-hover:text-white/70 transition-colors">Mail</span>
+      {/* TOP BAR */}
+      <header style={{ height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: `1px solid ${border}`, background: "rgba(14,14,16,0.92)", backdropFilter: "blur(20px) saturate(180%)", flexShrink: 0, zIndex: 50 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mail-sidebar-toggle" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: "#9A9AA8", cursor: "pointer", display: "none", alignItems: "center", justifyContent: "center" }}><Menu size={18} /></button>
+          <a href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${border}`, background: "#141416", display: "flex", alignItems: "center", justifyContent: "center" }}><img src="/alione.png" alt="" style={{ width: 22, height: 22 }} /></div>
+            <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 17, fontWeight: 700, color: "#636370", letterSpacing: "-0.01em" }}>Mail</span>
           </a>
-          <div className="w-px h-6 bg-[#2A2A2E]" />
-          <nav className="flex items-center gap-1">
-            {NAV_ITEMS.map(item => {
-              const Icon = item.icon;
-              return (
-                <button key={item.key} onClick={() => setTab(item.key)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all cursor-pointer border-none ${
-                    tab === item.key
-                      ? "bg-[#1C1C1F] text-white/80 font-medium"
-                      : "bg-transparent text-white/35 hover:text-white/55 hover:bg-[#1C1C1F]/50"
-                  }`}>
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setCompose(true)} className="bg-white text-black text-sm font-medium rounded-lg px-5 py-2 hover:bg-white/90 transition flex items-center gap-2 cursor-pointer border-none">
-            <PenBox size={15} /> Compose
+          <div style={{ width: 1, height: 24, background: border }} />
+          <button onClick={() => { setComposeTo(""); setComposeSubj(""); setComposeOpen(true); }}
+            style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 10, border: "none", background: "#F0F0F2", color: "#0A0A0B", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-display), sans-serif", cursor: "pointer" }}>
+            <PenBox size={16} /> Compose
           </button>
-          <button onClick={fetchList} disabled={loading} className="p-2 rounded-lg hover:bg-[#1C1C1F] text-white/25 hover:text-white/50 transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent">
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={fetchEmails} disabled={loading} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: "#636370", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: loading ? 0.4 : 1 }}>
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
-          <div className="w-px h-6 bg-[#2A2A2E]" />
+          <div style={{ width: 1, height: 24, background: border }} />
           <UserMenu user={user} myEmail={myEmail} signOut={signOut} />
         </div>
       </header>
 
-      {/* Body */}
-      <div className="flex-1 flex min-h-0">
+      {/* BODY */}
+      <div style={{ flex: 1, display: "flex", minHeight: 0, position: "relative" }}>
 
-        {/* Email list */}
-        <div className="w-[440px] min-w-[340px] border-r border-[#2A2A2E] flex flex-col flex-shrink-0 bg-[#111113]">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#222226] flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-white/50 uppercase tracking-wider">{tab}</span>
-              {isMail && emails.length > 0 && <span className="text-xs text-white/25 bg-[#1C1C1F] border border-[#2A2A2E] px-2.5 py-0.5 rounded-full">{emails.length}</span>}
+        {/* SIDEBAR */}
+        <aside style={{ width: 240, borderRight: `1px solid ${border}`, background: "#0E0E10", display: "flex", flexDirection: "column", flexShrink: 0 }} className={`mail-sidebar ${sidebarOpen ? "open" : ""}`}>
+          <div style={{ padding: "20px 16px" }}>
+            {/* Search */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: inputBg, border: `1px solid ${searchFocused ? "#3B82F6" : border}`, borderRadius: 12, transition: "border-color 200ms" }}>
+              <Search size={16} style={{ color: "#636370", flexShrink: 0 }} />
+              <input type="text" placeholder="Search emails..." value={searchQ} onChange={e => setSearchQ(e.target.value)} onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)}
+                style={{ flex: 1, background: "transparent", border: "none", fontSize: 14, color: "#F0F0F2", outline: "none" }} />
             </div>
           </div>
+          <div style={{ padding: "0 8px", flex: 1 }}>
+            {FOLDERS.map(f => {
+              const Icon = f.icon;
+              const active = folder === f.key;
+              const count = f.key === "inbox" ? unreadCount : 0;
+              return (
+                <button key={f.key} onClick={() => selectFolder(f.key)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 10, border: "none", background: active ? "rgba(255,255,255,0.06)" : "transparent", color: active ? "#F0F0F2" : "#9A9AA8", fontSize: 14, fontWeight: active ? 600 : 400, cursor: "pointer", textAlign: "left", marginBottom: 2, transition: "all 150ms", fontFamily: "inherit" }}>
+                  <Icon size={18} style={{ color: active ? "#3B82F6" : "#636370" }} />
+                  <span style={{ flex: 1 }}>{f.label}</span>
+                  {count > 0 && <span style={{ fontSize: 12, fontWeight: 600, color: "#3B82F6", background: "rgba(59,130,246,0.1)", padding: "2px 8px", borderRadius: 6 }}>{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ padding: "16px" }}>
+            <div style={{ padding: "12px 14px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, fontSize: 13, color: "#9A9AA8", lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 600, color: "#60A5FA", marginBottom: 4 }}>{myEmail}</div>
+              <div style={{ fontSize: 12, color: "#636370" }}>AliOne Mail</div>
+            </div>
+          </div>
+        </aside>
 
-          <div className="flex-1 overflow-y-auto">
-            {!isMail ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <Settings size={36} className="mx-auto mb-4 text-white/10" />
-                  <p className="text-base text-white/25">Settings</p>
-                  <p className="text-sm text-white/10 mt-1">Coming soon</p>
-                </div>
-              </div>
-            ) : loading ? (
-              <div><Skel /><Skel /><Skel /><Skel /></div>
+        {/* EMAIL LIST */}
+        <div style={{ width: 400, borderRight: `1px solid ${border}`, display: "flex", flexDirection: "column", flexShrink: 0, background: "#0D0D0F" }} className="mail-list-panel">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${borderSubtle}`, flexShrink: 0 }}>
+            <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 15, fontWeight: 600, color: "#F0F0F2", textTransform: "capitalize" }}>{folder}</span>
+            {filtered.length > 0 && <span style={{ fontSize: 13, color: "#636370" }}>{filtered.length} {filtered.length === 1 ? "message" : "messages"}</span>}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {loading ? (
+              <><Skel /><Skel /><Skel /><Skel /><Skel /></>
             ) : error ? (
-              <div className="flex items-center justify-center h-full px-6">
-                <div className="text-center">
-                  <p className="text-sm text-red-400/50">{error}</p>
-                  <button onClick={fetchList} className="text-sm text-white/25 hover:text-white/50 mt-3 underline cursor-pointer bg-transparent border-none">Retry</button>
-                </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24 }}>
+                <AlertCircle size={32} style={{ color: "#F87171", opacity: 0.4, marginBottom: 12 }} />
+                <p style={{ fontSize: 14, color: "#F87171", opacity: 0.6, marginBottom: 8, textAlign: "center" }}>{error}</p>
+                <button onClick={fetchEmails} style={{ fontSize: 13, color: "#3B82F6", background: "transparent", border: "none", cursor: "pointer", textDecoration: "underline" }}>Retry</button>
               </div>
-            ) : emails.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center px-10">
-                  <div className="w-16 h-16 rounded-2xl bg-[#1C1C1F] border border-[#2A2A2E] flex items-center justify-center mx-auto mb-5">
-                    <Mail size={28} className="text-white/15" />
-                  </div>
-                  <p className="text-base text-white/30 font-medium">No emails</p>
-                  <p className="text-sm text-white/15 mt-1.5">{tab === "inbox" ? "Your inbox is empty" : tab === "sent" ? "No sent emails" : "No drafts"}</p>
-                  {tab === "inbox" && (
-                    <button onClick={() => setCompose(true)} className="mt-6 text-sm bg-[#1C1C1F] hover:bg-[#222226] text-white/40 border border-[#2A2A2E] px-5 py-2.5 rounded-xl transition cursor-pointer">
-                      Compose your first email
-                    </button>
-                  )}
-                </div>
+            ) : filtered.length === 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24 }}>
+                <Mail size={40} style={{ color: "#2A2A2E", marginBottom: 16 }} />
+                <p style={{ fontSize: 15, color: "#636370", fontWeight: 500 }}>No emails</p>
+                <p style={{ fontSize: 13, color: "#3D3D42", marginTop: 4 }}>{searchQ ? "No matches found" : folder === "inbox" ? "Your inbox is empty" : "Nothing here yet"}</p>
+                {!searchQ && folder === "inbox" && (
+                  <button onClick={() => { setComposeTo(""); setComposeSubj(""); setComposeOpen(true); }}
+                    style={{ marginTop: 20, padding: "10px 24px", borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: "#9A9AA8", fontSize: 13, cursor: "pointer" }}>Compose</button>
+                )}
               </div>
             ) : (
-              emails.map(email => {
-                const isSel = sel === email.id;
+              filtered.map(email => {
+                const isSel = selId === email.id;
                 return (
-                  <button key={email.id} onClick={() => setSel(email.id)}
-                    className={`w-full text-left px-5 py-4 border-b border-[#1C1C1F] transition cursor-pointer ${
-                      isSel ? "bg-[#1C1C1F]" : "bg-transparent hover:bg-white/[0.02]"
-                    }`}>
-                    {email.unread && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#3B82F6]" />}
-                    <div className="flex gap-4">
-                      <Avatar email={email.from} name={dn(email)} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className={`text-[15px] truncate ${email.unread ? "font-semibold text-white" : "text-white/50"}`}>{dn(email)}</span>
-                          <span className="text-xs text-white/20 flex-shrink-0 ml-4">{email.date}</span>
+                  <button key={email.id} onClick={() => { setSelId(email.id); setSidebarOpen(false); }}
+                    style={{ width: "100%", textAlign: "left", padding: "16px 20px", borderBottom: `1px solid ${borderSubtle}`, background: isSel ? "rgba(59,130,246,0.06)" : "transparent", border: "none", borderLeft: `3px solid ${isSel ? "#3B82F6" : "transparent"}`, cursor: "pointer", display: "block", transition: "background 150ms", fontFamily: "inherit" }}>
+                    <div style={{ display: "flex", gap: 14 }}>
+                      <Avatar email={email.from} name={dn(email)} size={44} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                          <span style={{ fontSize: 15, fontWeight: email.unread ? 700 : 500, color: email.unread ? "#F0F0F2" : "#9A9AA8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dn(email)}</span>
+                          <span style={{ fontSize: 12, color: "#636370", flexShrink: 0, marginLeft: 12 }}>{rDate(email.date)}</span>
                         </div>
-                        <p className={`text-sm truncate mb-1 ${email.unread ? "font-medium text-white/70" : "text-white/35"}`}>{email.subject}</p>
-                        {email.preview && <p className="text-xs text-white/20 truncate">{email.preview}</p>}
+                        <p style={{ fontSize: 14, fontWeight: email.unread ? 600 : 400, color: email.unread ? "#D4D4D8" : "#636370", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{email.subject}</p>
+                        {email.preview && <p style={{ fontSize: 13, color: "#3D3D42", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.preview}</p>}
                       </div>
                     </div>
                   </button>
@@ -284,139 +409,56 @@ export default function MailDashboard() {
           </div>
         </div>
 
-        {/* Reader */}
-        <div ref={rRef} className="flex-1 flex flex-col overflow-y-auto bg-[#0A0A0B]">
+        {/* READER */}
+        <div ref={readerRef} style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", background: "#0A0A0B" }}>
           {loadingBody ? (
-            <div className="flex-1 flex items-center justify-center"><Loader2 size={28} className="animate-spin text-white/20" /></div>
-          ) : selected && sel ? (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={28} className="animate-spin" style={{ color: "#636370" }} /></div>
+          ) : rd && selId ? (
             <>
-              <div className="flex items-center gap-2 px-8 py-3 border-b border-[#222226] flex-shrink-0">
-                <button onClick={reply} className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-[#1C1C1F] text-white/35 hover:text-white/60 text-sm transition cursor-pointer bg-transparent border-none">
-                  <Reply size={16} /> Reply
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-[#1C1C1F] text-white/35 hover:text-white/60 text-sm transition cursor-pointer bg-transparent border-none">
-                  <Archive size={16} /> Archive
-                </button>
+              {/* Reader toolbar */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 28px", borderBottom: `1px solid ${borderSubtle}`, flexShrink: 0 }}>
+                <button onClick={reply} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.04)", color: "#9A9AA8", fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 150ms" }}><Reply size={15} /> Reply</button>
               </div>
-              <div className="flex-1 overflow-y-auto">
-                <div className="max-w-2xl mx-auto px-10 py-10">
-                  <div className="bg-[#111113] border border-[#2A2A2E] rounded-2xl p-8 mb-8">
-                    <div className="flex items-start gap-5">
-                      <Avatar email={selected.from} size="lg" />
-                      <div className="flex-1 min-w-0">
-                        <h1 className="font-outfit font-semibold text-2xl text-white leading-tight mb-3">{selected.subject || "(no subject)"}</h1>
-                        <p className="text-base text-white/50">{selected.from}</p>
-                        <p className="text-sm text-white/25 mt-1.5">{fullDate(selected.date)}</p>
-                      </div>
+              {/* Email header */}
+              <div style={{ padding: "32px 28px 24px", borderBottom: `1px solid ${borderSubtle}` }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
+                  <Avatar email={rd.from} size={52} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h1 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 24, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>{rd.subject || "(no subject)"}</h1>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: "#D4D4D8" }}>{rd.from}</span>
+                      <span style={{ fontSize: 13, color: "#3D3D42" }}>{fDate(rd.date)}</span>
                     </div>
-                  </div>
-                  <div className="text-base leading-[1.9]">
-                    {selected.html ? (
-                      <div className="prose prose-invert max-w-none text-white/60 [&_a]:text-blue-400 [&_a]:underline [&_a]:underline-offset-2 [&_img]:max-w-full [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: sanitize(selected.html) }} />
-                    ) : selected.body ? (
-                      <div className="text-white/50 whitespace-pre-line">{selected.body}</div>
-                    ) : (
-                      <div className="text-white/15 italic">Empty message</div>
-                    )}
                   </div>
                 </div>
               </div>
+              {/* Email body */}
+              <div style={{ flex: 1, padding: "28px", maxWidth: 800 }}>
+                {rd.html ? (
+                  <div style={{ fontSize: 15, lineHeight: 1.8, color: "#D4D4D8" }} dangerouslySetInnerHTML={{ __html: clean(rd.html) }} />
+                ) : rd.body ? (
+                  <div style={{ fontSize: 15, lineHeight: 1.8, color: "#D4D4D8", whiteSpace: "pre-wrap" }}>{rd.body}</div>
+                ) : (
+                  <p style={{ color: "#3D3D42", fontStyle: "italic" }}>Empty message</p>
+                )}
+              </div>
             </>
-          ) : emails.length > 0 && !sel ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center"><Inbox size={48} className="mx-auto mb-5 text-white/8" /><p className="text-base text-white/15">Select a message to read</p></div>
+          ) : selId === null && filtered.length > 0 ? (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <Inbox size={48} style={{ color: "#1C1C1F", marginBottom: 16 }} />
+              <p style={{ fontSize: 16, color: "#3D3D42" }}>Select a message to read</p>
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center"><Mail size={48} className="mx-auto mb-5 text-white/[0.06]" /><p className="text-base text-white/10">No message selected</p></div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <Mail size={48} style={{ color: "#141416", marginBottom: 16 }} />
+              <p style={{ fontSize: 16, color: "#3D3D42" }}>No message selected</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Compose modal */}
-      {compose && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }}>
-          <div className="w-full max-w-2xl bg-[#111113] border border-[#2A2A2E] rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-            <div className="flex items-center justify-between px-8 py-5 border-b border-[#2A2A2E]">
-              <h2 className="text-lg font-outfit font-semibold">New message</h2>
-              <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }} className="p-1.5 rounded-lg hover:bg-[#1C1C1F] text-white/25 hover:text-white/50 transition cursor-pointer bg-transparent border-none"><X size={20} /></button>
-            </div>
-            <div className="p-8">
-              <div className="space-y-5">
-                <input type="email" placeholder="To" value={to} onChange={e => setTo(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-5 py-3.5 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/15 transition" />
-                <input type="text" placeholder="Subject" value={subj} onChange={e => setSubj(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-5 py-3.5 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/15 transition" />
-                <textarea placeholder="Write your message..." value={body} onChange={e => setBody(e.target.value)} rows={12} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-5 py-3.5 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/15 resize-none leading-relaxed transition" />
-                {sendErr && <p className="text-red-400 text-sm">{sendErr}</p>}
-                {sendOk && <p className="text-green-400 text-sm flex items-center gap-2"><CheckCircle2 size={16} /> Sent!</p>}
-              </div>
-              <div className="flex justify-end gap-4 pt-5">
-                <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }} className="px-6 py-2.5 text-base text-white/40 hover:text-white/60 transition cursor-pointer bg-transparent border-none">Cancel</button>
-                <button onClick={handleSend} disabled={sending || sendOk || !to || !body} className="px-8 py-2.5 bg-white text-black text-base font-medium rounded-xl hover:bg-white/90 transition disabled:opacity-40 flex items-center gap-2 cursor-pointer border-none">
-                  {sending ? <><Loader2 size={16} className="animate-spin" /> Sending...</> : <><Send size={16} /> Send</>}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* COMPOSE MODAL */}
+      <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} onSent={() => { if (folder === "sent") fetchEmails(); }} initialTo={composeTo} initialSubject={composeSubj} myEmail={myEmail || ""} />
     </div>
   );
-}
-
-function UserMenu({ user, myEmail, signOut }: { user: any; myEmail: string | null; signOut: () => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const displayName = user?.fullName || myEmail?.split("@")[0] || "U";
-  const initial = displayName[0].toUpperCase();
-
-  return (
-    <div ref={ref} className="relative">
-      <button onClick={() => setOpen(!open)}
-        className="w-9 h-9 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-[#2A2A2E] flex items-center justify-center text-sm font-semibold text-white/50 hover:text-white/70 hover:border-white/20 transition-all cursor-pointer">
-        {initial}
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-60 bg-[#141416] border border-[#2A2A2E] rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50">
-          <div className="px-5 py-4 border-b border-[#2A2A2E]">
-            <p className="text-sm text-white/60 font-medium">{displayName}</p>
-            <p className="text-xs text-white/30 mt-1">{myEmail || "No email"}</p>
-          </div>
-          <div className="p-1.5">
-            <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/40 hover:text-white/70 hover:bg-[#1C1C1F] rounded-lg transition">
-              Dashboard
-            </a>
-            <button onClick={() => { signOut(); setOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/40 hover:text-red-400 hover:bg-[#1C1C1F] rounded-lg transition cursor-pointer bg-transparent border-none text-left">
-              <LogOut size={14} /> Sign out
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function fmt(d: string): string {
-  if (!d) return "";
-  const diff = Date.now() - new Date(d).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "now";
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const dd = Math.floor(h / 24);
-  if (dd < 7) return `${dd}d`;
-  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function fullDate(d: string): string {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
