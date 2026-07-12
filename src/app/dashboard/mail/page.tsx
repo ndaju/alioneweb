@@ -307,7 +307,7 @@ export default function MailDashboard() {
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mail-sidebar-toggle" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: "#9A9AA8", cursor: "pointer", display: "none", alignItems: "center", justifyContent: "center" }}><Menu size={18} /></button>
           <a href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${border}`, background: "#141416", display: "flex", alignItems: "center", justifyContent: "center" }}><img src="/alione.png" alt="" style={{ width: 22, height: 22 }} /></div>
-            <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 17, fontWeight: 700, color: "#636370", letterSpacing: "-0.01em" }}>Mail</span>
+            <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 17, fontWeight: 700, color: "#636370", letterSpacing: "-0.01em" }}>AliMail</span>
           </a>
           <div style={{ width: 1, height: 24, background: border }} />
           <button onClick={() => { setComposeTo(""); setComposeSubj(""); setComposeOpen(true); }}
