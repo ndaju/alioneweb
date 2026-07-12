@@ -205,10 +205,7 @@ export default function MailDashboard() {
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
           <div className="w-px h-5 bg-[#2A2A2E]" />
-          <span className="text-xs text-white/25 hidden lg:block">{myEmail}</span>
-          <button onClick={() => signOut()} className="p-1.5 rounded-lg hover:bg-[#1C1C1F] text-white/20 hover:text-white/40 transition-all">
-            <LogOut size={14} />
-          </button>
+          <UserMenu user={user} myEmail={myEmail} signOut={signOut} />
         </div>
       </header>
 
@@ -355,6 +352,45 @@ export default function MailDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UserMenu({ user, myEmail, signOut }: { user: any; myEmail: string | null; signOut: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const displayName = user?.fullName || myEmail?.split("@")[0] || "U";
+  const initial = displayName[0].toUpperCase();
+
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(!open)}
+        className="w-7 h-7 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-[#2A2A2E] flex items-center justify-center text-xs font-semibold text-white/50 hover:text-white/70 hover:border-white/20 transition-all cursor-pointer">
+        {initial}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 w-52 bg-[#141416] border border-[#2A2A2E] rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50">
+          <div className="px-4 py-3 border-b border-[#2A2A2E]">
+            <p className="text-xs text-white/60 font-medium truncate">{displayName}</p>
+            <p className="text-[11px] text-white/30 truncate mt-0.5">{myEmail || "No email"}</p>
+          </div>
+          <div className="p-1">
+            <a href="/dashboard" className="flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-white/70 hover:bg-[#1C1C1F] rounded-lg transition">
+              Dashboard
+            </a>
+            <button onClick={() => { signOut(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-red-400 hover:bg-[#1C1C1F] rounded-lg transition cursor-pointer bg-transparent border-none text-left">
+              <LogOut size={12} /> Sign out
+            </button>
           </div>
         </div>
       )}
