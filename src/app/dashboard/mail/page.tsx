@@ -26,19 +26,22 @@ function h(e: string) { let n = 0; for (let i = 0; i < e.length; i++) n = ((n <<
 function Avatar({ email, name, size = "md" }: { email: string; name?: string; size?: "sm" | "md" | "lg" }) {
   const c = COLORS[h(email) % COLORS.length];
   const l = (name || email || "?")[0].toUpperCase();
-  const d = { sm: "w-8 h-8 text-xs rounded-lg", md: "w-10 h-10 text-sm rounded-xl", lg: "w-12 h-12 text-base rounded-xl" };
-  return <div className={`${d[size]} bg-gradient-to-br ${c} border border-white/[0.08] flex items-center justify-center font-semibold flex-shrink-0 text-white/80`}>{l}</div>;
+  const sizes = { sm: "w-9 h-9 text-xs rounded-lg", md: "w-10 h-10 text-sm rounded-xl", lg: "w-12 h-12 text-base rounded-xl" };
+  return <div className={`${sizes[size]} bg-gradient-to-br ${c} border border-white/[0.08] flex items-center justify-center font-semibold flex-shrink-0 text-white/80`}>{l}</div>;
 }
 
-function Skel() { return (
-  <div className="flex gap-4 p-5 animate-pulse">
-    <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex-shrink-0" />
-    <div className="flex-1 space-y-3 pt-1">
-      <div className="flex justify-between"><div className="h-3.5 rounded-md bg-white/[0.04] w-32" /><div className="h-3 rounded-md bg-white/[0.04] w-10" /></div>
-      <div className="h-3.5 rounded-md bg-white/[0.03] w-3/4" />
+function Skel() {
+  return (
+    <div className="flex gap-4 p-5 animate-pulse">
+      <div className="w-11 h-11 rounded-xl bg-white/[0.04] flex-shrink-0" />
+      <div className="flex-1 space-y-3 pt-1">
+        <div className="flex justify-between"><div className="h-4 rounded-md bg-white/[0.05] w-36" /><div className="h-3.5 rounded-md bg-white/[0.04] w-12" /></div>
+        <div className="h-4 rounded-md bg-white/[0.04] w-3/4" />
+        <div className="h-3.5 rounded-md bg-white/[0.03] w-1/2" />
+      </div>
     </div>
-  </div>
-); }
+  );
+}
 
 type Rd = { body: string; html: string; from: string; subject: string; date: string };
 
@@ -72,7 +75,6 @@ export default function MailDashboard() {
   const metaEmail = user?.publicMetadata?.claimedEmail as string | undefined;
   const myEmail = claimedEmail || metaEmail || null;
   const needClaim = !myEmail && !claimOk;
-
   const mb: Record<NavItem, string> = { inbox: "INBOX", sent: "Sent", drafts: "Drafts", settings: "INBOX" };
 
   const fetchList = useCallback(async () => {
@@ -88,7 +90,6 @@ export default function MailDashboard() {
   }, [tab]);
 
   useEffect(() => { if (myEmail && isLoaded) fetchList(); }, [myEmail, isLoaded, fetchList]);
-
   useEffect(() => {
     if (!sel || !isLoaded || !myEmail) return;
     setLoadingBody(true); setRd(null);
@@ -99,7 +100,7 @@ export default function MailDashboard() {
   useEffect(() => { if (rRef.current) rRef.current.scrollTop = 0; }, [sel]);
 
   if (!isSignedIn) return null;
-  if (!isLoaded) return <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center"><Loader2 size={24} className="animate-spin text-white/20" /></div>;
+  if (!isLoaded) return <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center"><Loader2 size={28} className="animate-spin text-white/20" /></div>;
 
   const selected = rd;
 
@@ -112,6 +113,7 @@ export default function MailDashboard() {
       if (d.success) { setClaimedEmail(d.email); setClaimOk(true); } else setClaimErr(d.error || "Failed");
     } catch { setClaimErr("Connection error"); } finally { setClaiming(false); }
   };
+
   const handleSend = async () => {
     if (!to || !body) return;
     setSending(true); setSendErr(""); setSendOk(false);
@@ -122,6 +124,7 @@ export default function MailDashboard() {
       else setSendErr(d.error || "Failed");
     } catch { setSendErr("Connection error"); } finally { setSending(false); }
   };
+
   const reply = () => {
     if (!selected || !sel) return;
     const e = emails.find(x => x.id === sel); if (!e) return;
@@ -137,30 +140,30 @@ export default function MailDashboard() {
       <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl border border-[#2A2A2E] bg-[#141416] flex items-center justify-center">
+            <div className="w-11 h-11 rounded-xl border border-[#2A2A2E] bg-[#141416] flex items-center justify-center">
               <img src="/alione.png" className="w-6 h-6" />
             </div>
-            <span className="font-outfit text-lg font-bold">AliOne Mail</span>
+            <span className="font-outfit text-xl font-bold">AliOne Mail</span>
           </div>
-          <h1 className="font-outfit text-2xl font-bold mb-1">Claim your email</h1>
-          <p className="text-white/40 text-sm mb-8">Choose your @alione.cc address</p>
-          <div className="space-y-4">
+          <h1 className="font-outfit text-3xl font-bold mb-2">Claim your email</h1>
+          <p className="text-white/40 text-base mb-8">Choose your @alione.cc address</p>
+          <div className="space-y-5">
             <div>
-              <label className="text-xs text-white/30 mb-1.5 block">Email</label>
+              <label className="text-sm text-white/40 mb-2 block font-medium">Email</label>
               <div className="flex">
-                <input type="text" placeholder="username" value={uname} onChange={e => setUname(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))} className="flex-1 bg-[#1C1C1F] border border-[#2A2A2E] rounded-l-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none font-mono" />
-                <span className="bg-[#1C1C1F] border border-l-0 border-[#2A2A2E] rounded-r-xl px-3 py-2.5 text-white/40 text-sm font-mono">@alione.cc</span>
+                <input type="text" placeholder="username" value={uname} onChange={e => setUname(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))} className="flex-1 bg-[#1C1C1F] border border-[#2A2A2E] rounded-l-xl px-4 py-3 text-base text-white placeholder:text-white/20 focus:outline-none font-mono" />
+                <span className="bg-[#1C1C1F] border border-l-0 border-[#2A2A2E] rounded-r-xl px-4 py-3 text-white/40 text-base font-mono">@alione.cc</span>
               </div>
             </div>
             <div>
-              <label className="text-xs text-white/30 mb-1.5 block">Password</label>
-              <input type="password" placeholder="Strong password" value={pw} onChange={e => setPw(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none" />
+              <label className="text-sm text-white/40 mb-2 block font-medium">Password</label>
+              <input type="password" placeholder="Strong password" value={pw} onChange={e => setPw(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-4 py-3 text-base text-white placeholder:text-white/20 focus:outline-none" />
             </div>
-            {claimErr && <p className="text-red-400 text-xs">{claimErr}</p>}
-            <button onClick={handleClaim} disabled={claiming || claimOk || !uname || !pw} className="w-full bg-white text-black text-sm font-medium rounded-xl py-2.5 hover:bg-white/90 transition disabled:opacity-40 flex items-center justify-center gap-2">
-              {claiming ? <><Loader2 size={14} className="animate-spin" /> Creating...</> : claimOk ? <><CheckCircle2 size={14} /> Claimed!</> : "Claim Email"}
+            {claimErr && <p className="text-red-400 text-sm">{claimErr}</p>}
+            <button onClick={handleClaim} disabled={claiming || claimOk || !uname || !pw} className="w-full bg-white text-black text-base font-medium rounded-xl py-3 hover:bg-white/90 transition disabled:opacity-40 flex items-center justify-center gap-2">
+              {claiming ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : claimOk ? <><CheckCircle2 size={16} /> Claimed!</> : "Claim Email"}
             </button>
-            {claimOk && <p className="text-green-400 text-xs text-center">✓ {myEmail} is yours!</p>}
+            {claimOk && <p className="text-green-400 text-sm text-center">✓ {myEmail} is yours!</p>}
           </div>
         </div>
       </div>
@@ -170,27 +173,27 @@ export default function MailDashboard() {
   return (
     <div className="h-screen bg-[#0A0A0B] text-white flex flex-col overflow-hidden">
 
-      {/* Glass header */}
-      <header className="h-14 flex items-center justify-between px-6 flex-shrink-0 border-b border-[#2A2A2E]" style={{ background: "rgba(20,20,22,0.85)", backdropFilter: "blur(20px)" }}>
-        <div className="flex items-center gap-5">
-          <a href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 rounded-lg border border-[#2A2A2E] bg-[#1C1C1F] flex items-center justify-center">
-              <img src="/alione.png" className="w-4 h-4" />
+      {/* Header */}
+      <header className="h-[72px] flex items-center justify-between px-6 flex-shrink-0 border-b border-[#2A2A2E]" style={{ background: "rgba(14,14,16,0.9)", backdropFilter: "blur(20px)" }}>
+        <div className="flex items-center gap-6">
+          <a href="/dashboard" className="flex items-center gap-3 group">
+            <div className="w-8 h-8 rounded-xl border border-[#2A2A2E] bg-[#1C1C1F] flex items-center justify-center">
+              <img src="/alione.png" className="w-5 h-5" />
             </div>
-            <span className="text-sm font-outfit font-semibold text-white/50 group-hover:text-white/70 transition-colors">Mail</span>
+            <span className="text-base font-outfit font-semibold text-white/50 group-hover:text-white/70 transition-colors">Mail</span>
           </a>
-          <div className="w-px h-5 bg-[#2A2A2E]" />
+          <div className="w-px h-6 bg-[#2A2A2E]" />
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(item => {
               const Icon = item.icon;
               return (
                 <button key={item.key} onClick={() => setTab(item.key)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all cursor-pointer border-none ${
                     tab === item.key
                       ? "bg-[#1C1C1F] text-white/80 font-medium"
-                      : "text-white/30 hover:text-white/50"
+                      : "bg-transparent text-white/35 hover:text-white/55 hover:bg-[#1C1C1F]/50"
                   }`}>
-                  <Icon size={14} />
+                  <Icon size={16} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -198,13 +201,13 @@ export default function MailDashboard() {
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setCompose(true)} className="bg-white text-black text-sm font-medium rounded-lg px-4 py-1.5 hover:bg-white/90 transition flex items-center gap-2">
-            <PenBox size={13} /> Compose
+          <button onClick={() => setCompose(true)} className="bg-white text-black text-sm font-medium rounded-lg px-5 py-2 hover:bg-white/90 transition flex items-center gap-2 cursor-pointer border-none">
+            <PenBox size={15} /> Compose
           </button>
-          <button onClick={fetchList} disabled={loading} className="p-1.5 rounded-lg hover:bg-[#1C1C1F] text-white/25 hover:text-white/45 transition-all disabled:opacity-30">
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          <button onClick={fetchList} disabled={loading} className="p-2 rounded-lg hover:bg-[#1C1C1F] text-white/25 hover:text-white/50 transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent">
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
-          <div className="w-px h-5 bg-[#2A2A2E]" />
+          <div className="w-px h-6 bg-[#2A2A2E]" />
           <UserMenu user={user} myEmail={myEmail} signOut={signOut} />
         </div>
       </header>
@@ -212,12 +215,12 @@ export default function MailDashboard() {
       {/* Body */}
       <div className="flex-1 flex min-h-0">
 
-        {/* Email list panel */}
-        <div className="w-[380px] min-w-[300px] border-r border-[#2A2A2E] flex flex-col flex-shrink-0 bg-[#141416]">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-[#222226] flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-white/40 uppercase tracking-wider">{tab}</span>
-              {isMail && emails.length > 0 && <span className="text-[10px] text-white/20 bg-[#1C1C1F] border border-[#2A2A2E] px-2 py-0.5 rounded-full">{emails.length}</span>}
+        {/* Email list */}
+        <div className="w-[440px] min-w-[340px] border-r border-[#2A2A2E] flex flex-col flex-shrink-0 bg-[#111113]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#222226] flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-white/50 uppercase tracking-wider">{tab}</span>
+              {isMail && emails.length > 0 && <span className="text-xs text-white/25 bg-[#1C1C1F] border border-[#2A2A2E] px-2.5 py-0.5 rounded-full">{emails.length}</span>}
             </div>
           </div>
 
@@ -225,30 +228,30 @@ export default function MailDashboard() {
             {!isMail ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <Settings size={32} className="mx-auto mb-3 text-white/10" />
-                  <p className="text-sm text-white/25">Settings</p>
-                  <p className="text-xs text-white/10 mt-1">Coming soon</p>
+                  <Settings size={36} className="mx-auto mb-4 text-white/10" />
+                  <p className="text-base text-white/25">Settings</p>
+                  <p className="text-sm text-white/10 mt-1">Coming soon</p>
                 </div>
               </div>
             ) : loading ? (
-              <div><Skel /><Skel /><Skel /></div>
+              <div><Skel /><Skel /><Skel /><Skel /></div>
             ) : error ? (
               <div className="flex items-center justify-center h-full px-6">
                 <div className="text-center">
                   <p className="text-sm text-red-400/50">{error}</p>
-                  <button onClick={fetchList} className="text-xs text-white/25 hover:text-white/50 mt-3 underline cursor-pointer bg-transparent border-none">Retry</button>
+                  <button onClick={fetchList} className="text-sm text-white/25 hover:text-white/50 mt-3 underline cursor-pointer bg-transparent border-none">Retry</button>
                 </div>
               </div>
             ) : emails.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center px-10">
-                  <div className="w-14 h-14 rounded-2xl bg-[#1C1C1F] border border-[#2A2A2E] flex items-center justify-center mx-auto mb-4">
-                    <Mail size={24} className="text-white/15" />
+                  <div className="w-16 h-16 rounded-2xl bg-[#1C1C1F] border border-[#2A2A2E] flex items-center justify-center mx-auto mb-5">
+                    <Mail size={28} className="text-white/15" />
                   </div>
-                  <p className="text-sm text-white/30 font-medium">No emails</p>
-                  <p className="text-xs text-white/15 mt-1">{tab === "inbox" ? "Your inbox is empty" : tab === "sent" ? "No sent emails" : "No drafts"}</p>
+                  <p className="text-base text-white/30 font-medium">No emails</p>
+                  <p className="text-sm text-white/15 mt-1.5">{tab === "inbox" ? "Your inbox is empty" : tab === "sent" ? "No sent emails" : "No drafts"}</p>
                   {tab === "inbox" && (
-                    <button onClick={() => setCompose(true)} className="mt-5 text-xs bg-[#1C1C1F] hover:bg-[#222226] text-white/40 border border-[#2A2A2E] px-4 py-2 rounded-lg transition cursor-pointer">
+                    <button onClick={() => setCompose(true)} className="mt-6 text-sm bg-[#1C1C1F] hover:bg-[#222226] text-white/40 border border-[#2A2A2E] px-5 py-2.5 rounded-xl transition cursor-pointer">
                       Compose your first email
                     </button>
                   )}
@@ -259,18 +262,18 @@ export default function MailDashboard() {
                 const isSel = sel === email.id;
                 return (
                   <button key={email.id} onClick={() => setSel(email.id)}
-                    className={`w-full text-left px-5 py-4 border-b border-[#222226] transition relative cursor-pointer ${
-                      isSel ? "bg-[#1C1C1F]" : "hover:bg-white/[0.015]"
+                    className={`w-full text-left px-5 py-4 border-b border-[#1C1C1F] transition cursor-pointer ${
+                      isSel ? "bg-[#1C1C1F]" : "bg-transparent hover:bg-white/[0.02]"
                     }`}>
-                    {email.unread && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#3B82F6]" />}
-                    <div className="flex gap-3">
+                    {email.unread && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#3B82F6]" />}
+                    <div className="flex gap-4">
                       <Avatar email={email.from} name={dn(email)} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`text-sm truncate ${email.unread ? "font-semibold text-white" : "text-white/50"}`}>{dn(email)}</span>
-                          <span className="text-[11px] text-white/20 flex-shrink-0 ml-3">{email.date}</span>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className={`text-[15px] truncate ${email.unread ? "font-semibold text-white" : "text-white/50"}`}>{dn(email)}</span>
+                          <span className="text-xs text-white/20 flex-shrink-0 ml-4">{email.date}</span>
                         </div>
-                        <p className={`text-sm truncate mb-0.5 ${email.unread ? "font-medium text-white/70" : "text-white/35"}`}>{email.subject}</p>
+                        <p className={`text-sm truncate mb-1 ${email.unread ? "font-medium text-white/70" : "text-white/35"}`}>{email.subject}</p>
                         {email.preview && <p className="text-xs text-white/20 truncate">{email.preview}</p>}
                       </div>
                     </div>
@@ -284,36 +287,36 @@ export default function MailDashboard() {
         {/* Reader */}
         <div ref={rRef} className="flex-1 flex flex-col overflow-y-auto bg-[#0A0A0B]">
           {loadingBody ? (
-            <div className="flex-1 flex items-center justify-center"><Loader2 size={22} className="animate-spin text-white/20" /></div>
+            <div className="flex-1 flex items-center justify-center"><Loader2 size={28} className="animate-spin text-white/20" /></div>
           ) : selected && sel ? (
             <>
-              <div className="flex items-center gap-1 px-6 py-2.5 border-b border-[#222226] flex-shrink-0">
-                <button onClick={reply} className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#1C1C1F] text-white/25 hover:text-white/50 text-sm transition cursor-pointer bg-transparent border-none">
-                  <Reply size={14} /> Reply
+              <div className="flex items-center gap-2 px-8 py-3 border-b border-[#222226] flex-shrink-0">
+                <button onClick={reply} className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-[#1C1C1F] text-white/35 hover:text-white/60 text-sm transition cursor-pointer bg-transparent border-none">
+                  <Reply size={16} /> Reply
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#1C1C1F] text-white/25 hover:text-white/50 text-sm transition cursor-pointer bg-transparent border-none">
-                  <Archive size={14} /> Archive
+                <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-[#1C1C1F] text-white/35 hover:text-white/60 text-sm transition cursor-pointer bg-transparent border-none">
+                  <Archive size={16} /> Archive
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto">
                 <div className="max-w-2xl mx-auto px-10 py-10">
-                  <div className="bg-[#141416] border border-[#2A2A2E] rounded-xl p-6 mb-8">
-                    <div className="flex items-start gap-4">
+                  <div className="bg-[#111113] border border-[#2A2A2E] rounded-2xl p-8 mb-8">
+                    <div className="flex items-start gap-5">
                       <Avatar email={selected.from} size="lg" />
                       <div className="flex-1 min-w-0">
-                        <h1 className="font-outfit font-semibold text-xl text-white leading-tight mb-2">{selected.subject || "(no subject)"}</h1>
-                        <p className="text-sm text-white/45">{selected.from}</p>
-                        <p className="text-xs text-white/20 mt-1">{fullDate(selected.date)}</p>
+                        <h1 className="font-outfit font-semibold text-2xl text-white leading-tight mb-3">{selected.subject || "(no subject)"}</h1>
+                        <p className="text-base text-white/50">{selected.from}</p>
+                        <p className="text-sm text-white/25 mt-1.5">{fullDate(selected.date)}</p>
                       </div>
                     </div>
                   </div>
-                  <div>
+                  <div className="text-base leading-[1.9]">
                     {selected.html ? (
-                      <div className="prose prose-invert max-w-none text-sm leading-[1.8] text-white/60 [&_a]:text-blue-400 [&_a]:underline [&_a]:underline-offset-2 [&_img]:max-w-full [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: sanitize(selected.html) }} />
+                      <div className="prose prose-invert max-w-none text-white/60 [&_a]:text-blue-400 [&_a]:underline [&_a]:underline-offset-2 [&_img]:max-w-full [&_img]:rounded-lg" dangerouslySetInnerHTML={{ __html: sanitize(selected.html) }} />
                     ) : selected.body ? (
-                      <div className="text-white/45 whitespace-pre-line text-sm leading-[1.8]">{selected.body}</div>
+                      <div className="text-white/50 whitespace-pre-line">{selected.body}</div>
                     ) : (
-                      <div className="text-white/10 text-sm italic">Empty message</div>
+                      <div className="text-white/15 italic">Empty message</div>
                     )}
                   </div>
                 </div>
@@ -321,11 +324,11 @@ export default function MailDashboard() {
             </>
           ) : emails.length > 0 && !sel ? (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-center"><Inbox size={40} className="mx-auto mb-4 text-white/8" /><p className="text-sm text-white/15">Select a message to read</p></div>
+              <div className="text-center"><Inbox size={48} className="mx-auto mb-5 text-white/8" /><p className="text-base text-white/15">Select a message to read</p></div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-center"><Mail size={40} className="mx-auto mb-4 text-white/[0.06]" /><p className="text-sm text-white/10">No message selected</p></div>
+              <div className="text-center"><Mail size={48} className="mx-auto mb-5 text-white/[0.06]" /><p className="text-base text-white/10">No message selected</p></div>
             </div>
           )}
         </div>
@@ -333,22 +336,24 @@ export default function MailDashboard() {
 
       {/* Compose modal */}
       {compose && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-[#141416] border border-[#2A2A2E] rounded-xl overflow-hidden shadow-2xl shadow-black/50">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#2A2A2E]">
-              <h2 className="text-sm font-outfit font-semibold">New message</h2>
-              <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }} className="text-white/20 hover:text-white/40 transition cursor-pointer bg-transparent border-none p-1"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }}>
+          <div className="w-full max-w-2xl bg-[#111113] border border-[#2A2A2E] rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+            <div className="flex items-center justify-between px-8 py-5 border-b border-[#2A2A2E]">
+              <h2 className="text-lg font-outfit font-semibold">New message</h2>
+              <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }} className="p-1.5 rounded-lg hover:bg-[#1C1C1F] text-white/25 hover:text-white/50 transition cursor-pointer bg-transparent border-none"><X size={20} /></button>
             </div>
-            <div className="p-6 space-y-4">
-              <input type="email" placeholder="To" value={to} onChange={e => setTo(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none" />
-              <input type="text" placeholder="Subject" value={subj} onChange={e => setSubj(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none" />
-              <textarea placeholder="Write your message..." value={body} onChange={e => setBody(e.target.value)} rows={10} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none resize-none leading-relaxed" />
-              {sendErr && <p className="text-red-400 text-sm">{sendErr}</p>}
-              {sendOk && <p className="text-green-400 text-sm flex items-center gap-2"><CheckCircle2 size={14} /> Sent!</p>}
-              <div className="flex justify-end gap-3 pt-1">
-                <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }} className="px-5 py-2.5 text-sm text-white/40 hover:text-white/60 transition cursor-pointer bg-transparent border-none">Cancel</button>
-                <button onClick={handleSend} disabled={sending || sendOk || !to || !body} className="px-6 py-2.5 bg-white text-black text-sm font-medium rounded-xl hover:bg-white/90 transition disabled:opacity-40 flex items-center gap-2 cursor-pointer border-none">
-                  {sending ? <><Loader2 size={14} className="animate-spin" /> Sending...</> : <><Send size={14} /> Send</>}
+            <div className="p-8">
+              <div className="space-y-5">
+                <input type="email" placeholder="To" value={to} onChange={e => setTo(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-5 py-3.5 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/15 transition" />
+                <input type="text" placeholder="Subject" value={subj} onChange={e => setSubj(e.target.value)} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-5 py-3.5 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/15 transition" />
+                <textarea placeholder="Write your message..." value={body} onChange={e => setBody(e.target.value)} rows={12} className="w-full bg-[#1C1C1F] border border-[#2A2A2E] rounded-xl px-5 py-3.5 text-base text-white placeholder:text-white/20 focus:outline-none focus:border-white/15 resize-none leading-relaxed transition" />
+                {sendErr && <p className="text-red-400 text-sm">{sendErr}</p>}
+                {sendOk && <p className="text-green-400 text-sm flex items-center gap-2"><CheckCircle2 size={16} /> Sent!</p>}
+              </div>
+              <div className="flex justify-end gap-4 pt-5">
+                <button onClick={() => { setCompose(false); setSendErr(""); setSendOk(false); }} className="px-6 py-2.5 text-base text-white/40 hover:text-white/60 transition cursor-pointer bg-transparent border-none">Cancel</button>
+                <button onClick={handleSend} disabled={sending || sendOk || !to || !body} className="px-8 py-2.5 bg-white text-black text-base font-medium rounded-xl hover:bg-white/90 transition disabled:opacity-40 flex items-center gap-2 cursor-pointer border-none">
+                  {sending ? <><Loader2 size={16} className="animate-spin" /> Sending...</> : <><Send size={16} /> Send</>}
                 </button>
               </div>
             </div>
@@ -374,22 +379,22 @@ function UserMenu({ user, myEmail, signOut }: { user: any; myEmail: string | nul
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(!open)}
-        className="w-7 h-7 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-[#2A2A2E] flex items-center justify-center text-xs font-semibold text-white/50 hover:text-white/70 hover:border-white/20 transition-all cursor-pointer">
+        className="w-9 h-9 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-[#2A2A2E] flex items-center justify-center text-sm font-semibold text-white/50 hover:text-white/70 hover:border-white/20 transition-all cursor-pointer">
         {initial}
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-52 bg-[#141416] border border-[#2A2A2E] rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50">
-          <div className="px-4 py-3 border-b border-[#2A2A2E]">
-            <p className="text-xs text-white/60 font-medium truncate">{displayName}</p>
-            <p className="text-[11px] text-white/30 truncate mt-0.5">{myEmail || "No email"}</p>
+        <div className="absolute right-0 top-full mt-2 w-60 bg-[#141416] border border-[#2A2A2E] rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50">
+          <div className="px-5 py-4 border-b border-[#2A2A2E]">
+            <p className="text-sm text-white/60 font-medium">{displayName}</p>
+            <p className="text-xs text-white/30 mt-1">{myEmail || "No email"}</p>
           </div>
-          <div className="p-1">
-            <a href="/dashboard" className="flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-white/70 hover:bg-[#1C1C1F] rounded-lg transition">
+          <div className="p-1.5">
+            <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/40 hover:text-white/70 hover:bg-[#1C1C1F] rounded-lg transition">
               Dashboard
             </a>
             <button onClick={() => { signOut(); setOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/40 hover:text-red-400 hover:bg-[#1C1C1F] rounded-lg transition cursor-pointer bg-transparent border-none text-left">
-              <LogOut size={12} /> Sign out
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/40 hover:text-red-400 hover:bg-[#1C1C1F] rounded-lg transition cursor-pointer bg-transparent border-none text-left">
+              <LogOut size={14} /> Sign out
             </button>
           </div>
         </div>
