@@ -6,7 +6,7 @@ import { useClerk } from "@clerk/nextjs";
 import {
   Inbox, Send, FileText, Trash2, Reply, Loader2, CheckCircle2,
   Mail, X, PenBox, RefreshCw, LogOut, Search, AlertCircle,
-  Menu, Paperclip, ArrowLeft,
+  Menu, Paperclip, Trash, RotateCcw,
 } from "lucide-react";
 
 type Email = { id: number; from: string; fromName: string; subject: string; preview: string; body: string; html: string; date: string; unread: boolean; seen: boolean };
@@ -76,6 +76,21 @@ function Skel() {
   );
 }
 
+const cbStyle: React.CSSProperties = { width: 18, height: 18, borderRadius: 4, border: "2px solid #2A2A2E", background: "transparent", flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", appearance: "none", WebkitAppearance: "none", MozAppearance: "none" };
+
+function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <div onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+      <div
+        onClick={onChange}
+        style={{ ...cbStyle, background: checked ? "#3B82F6" : "transparent", borderColor: checked ? "#3B82F6" : "#2A2A2E", transition: "all 150ms" }}
+      >
+        {checked && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4 7L8 3" stroke="#0A0A0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      </div>
+    </div>
+  );
+}
+
 function ClaimScreen({ onSuccess }: { onSuccess: (email: string) => void }) {
   const [uname, setUname] = useState("");
   const [pw, setPw] = useState("");
@@ -99,13 +114,8 @@ function ClaimScreen({ onSuccess }: { onSuccess: (email: string) => void }) {
     <div style={{ minHeight: "100vh", background: "#0A0A0B", display: "flex", alignItems: "center", justifyContent: "center", padding: 32 }}>
       <div style={{ width: "100%", maxWidth: 440 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 48 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, border: "1px solid #2A2A2E", background: "#141416", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <img src="/alione.png" alt="" style={{ width: 28, height: 28 }} />
-          </div>
-          <div>
-            <div style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 22, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.02em" }}>AliMail</div>
-            <div style={{ fontSize: 13, color: "#636370", marginTop: 2 }}>Private email by AliOne</div>
-          </div>
+          <div style={{ width: 48, height: 48, borderRadius: 14, border: "1px solid #2A2A2E", background: "#141416", display: "flex", alignItems: "center", justifyContent: "center" }}><img src="/alione.png" alt="" style={{ width: 28, height: 28 }} /></div>
+          <div><div style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 22, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.02em" }}>AliMail</div><div style={{ fontSize: 13, color: "#636370", marginTop: 2 }}>Private email by AliOne</div></div>
         </div>
         <h1 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 32, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.03em", marginBottom: 12, lineHeight: 1.1 }}>Claim your email</h1>
         <p style={{ fontSize: 16, color: "#9A9AA8", marginBottom: 40, lineHeight: 1.6 }}>Choose a username for your @alione.cc address.</p>
@@ -145,7 +155,6 @@ function ComposeModal({ open, onClose, onSent, initialTo, initialSubject, myEmai
 
   useEffect(() => { setTo(initialTo); setSubject(initialSubject); setBody(""); setError(""); setSent(false); }, [initialTo, initialSubject, open]);
   useEffect(() => { if (open) setTimeout(() => taRef.current?.focus(), 100); }, [open]);
-
   if (!open) return null;
 
   const send = async () => {
@@ -204,10 +213,7 @@ function UserMenu({ user, myEmail, signOut }: { user: any; myEmail: string | nul
       <button onClick={() => setOpen(!open)} style={{ width: 38, height: 38, borderRadius: 12, background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.04))", border: "1px solid #2A2A2E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, color: "#9A9AA8", cursor: "pointer", fontFamily: "var(--font-display), sans-serif" }}>{initial}</button>
       {open && (
         <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 8, width: 260, background: "#141416", border: "1px solid #2A2A2E", borderRadius: 16, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)", zIndex: 200 }}>
-          <div style={{ padding: "18px 20px", borderBottom: "1px solid #2A2A2E" }}>
-            <div style={{ fontSize: 15, fontWeight: 500, color: "#F0F0F2", marginBottom: 4 }}>{name}</div>
-            <div style={{ fontSize: 13, color: "#636370", fontFamily: "'JetBrains Mono', monospace" }}>{myEmail || "No email"}</div>
-          </div>
+          <div style={{ padding: "18px 20px", borderBottom: "1px solid #2A2A2E" }}><div style={{ fontSize: 15, fontWeight: 500, color: "#F0F0F2", marginBottom: 4 }}>{name}</div><div style={{ fontSize: 13, color: "#636370", fontFamily: "'JetBrains Mono', monospace" }}>{myEmail || "No email"}</div></div>
           <div style={{ padding: 6 }}>
             <a href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", textDecoration: "none" }}><Inbox size={16} />Dashboard</a>
             <button onClick={() => { signOut(); setOpen(false); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}><LogOut size={16} />Sign out</button>
@@ -225,6 +231,7 @@ export default function MailDashboard() {
 
   const [folder, setFolder] = useState<Folder>("inbox");
   const [selId, setSelId] = useState<number | null>(null);
+  const [selIds, setSelIds] = useState<number[]>([]);
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -238,13 +245,13 @@ export default function MailDashboard() {
   const [searchQ, setSearchQ] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const readerRef = useRef<HTMLDivElement>(null);
 
   const metaEmail = useMemo(() => {
     if (!user) return undefined;
     return (user.publicMetadata as Record<string, unknown>)?.claimedEmail as string | undefined;
   }, [user]);
-
   const myEmail = claimedEmail || metaEmail || null;
 
   const filtered = useMemo(() => {
@@ -255,8 +262,13 @@ export default function MailDashboard() {
 
   const unreadCount = useMemo(() => emails.filter(e => e.unread).length, [emails]);
 
+  const allSelected = filtered.length > 0 && selIds.length === filtered.length;
+  const someSelected = selIds.length > 0;
+
+  // ─── Data ───────────────────────────────────────────────────────
+
   const fetchEmails = useCallback(async () => {
-    setLoading(true); setError(""); setSelId(null); setRd(null);
+    setLoading(true); setError(""); setSelId(null); setRd(null); setSelIds([]);
     const mb = MAILBOX_MAP[folder];
     if (!mb) { setLoading(false); setEmails([]); return; }
     try {
@@ -280,11 +292,53 @@ export default function MailDashboard() {
   useEffect(() => { if (readerRef.current) readerRef.current.scrollTop = 0; }, [selId]);
   useEffect(() => { if (isLoaded && !metaEmail && !claimedEmail) setNeedClaim(true); else setNeedClaim(false); }, [isLoaded, metaEmail, claimedEmail]);
 
-  const selectFolder = (f: Folder) => { setFolder(f); setSidebarOpen(false); };
+  // ─── Selection ──────────────────────────────────────────────────
 
-  if (!isSignedIn) return null;
-  if (!isLoaded) return <div style={{ minHeight: "100vh", background: "#0A0A0B", display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={32} className="animate-spin" style={{ color: "rgba(255,255,255,0.15)" }} /></div>;
-  if (needClaim) return <ClaimScreen onSuccess={(e) => { setClaimedEmail(e); setNeedClaim(false); }} />;
+  const toggleSelect = (id: number) => {
+    setSelIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) setSelIds([]);
+    else setSelIds(filtered.map(e => e.id));
+  };
+
+  const clearSelection = () => setSelIds([]);
+
+  // ─── Delete / Trash ─────────────────────────────────────────────
+
+  const moveToTrash = async (singleUid?: number) => {
+    const ids = singleUid ? [singleUid] : selIds;
+    if (ids.length === 0) return;
+    setDeleting(true);
+    try {
+      const r = await fetch("/api/mail/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ uids: ids, sourceFolder: MAILBOX_MAP[folder] }) });
+      const d = await r.json();
+      if (d.success) { setSelIds([]); setSelId(null); fetchEmails(); }
+    } catch {} finally { setDeleting(false); }
+  };
+
+  const permanentlyDelete = async () => {
+    if (selIds.length === 0) return;
+    setDeleting(true);
+    try {
+      const r = await fetch("/api/mail/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ uids: selIds, sourceFolder: "Trash", permanent: true }) });
+      const d = await r.json();
+      if (d.success) { setSelIds([]); setSelId(null); fetchEmails(); }
+    } catch {} finally { setDeleting(false); }
+  };
+
+  const clearTrash = async () => {
+    setDeleting(true);
+    try {
+      await fetch("/api/mail/clear-trash", { method: "POST" });
+      setSelId(null); fetchEmails();
+    } catch {} finally { setDeleting(false); }
+  };
+
+  // ─── Helpers ────────────────────────────────────────────────────
+
+  const selectFolder = (f: Folder) => { setFolder(f); setSidebarOpen(false); setSelIds([]); };
 
   const reply = () => {
     if (!rd || !selId) return;
@@ -294,9 +348,15 @@ export default function MailDashboard() {
     setComposeOpen(true);
   };
 
-  const inputBg = "#1C1C1F";
+  // ─── Early returns ──────────────────────────────────────────────
+
+  if (!isSignedIn) return null;
+  if (!isLoaded) return <div style={{ minHeight: "100vh", background: "#0A0A0B", display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={32} className="animate-spin" style={{ color: "rgba(255,255,255,0.15)" }} /></div>;
+  if (needClaim) return <ClaimScreen onSuccess={(e) => { setClaimedEmail(e); setNeedClaim(false); }} />;
+
   const border = "#2A2A2E";
   const borderSubtle = "#1C1C1F";
+  const inputBg = "#1C1C1F";
 
   return (
     <div style={{ height: "100vh", background: "#0A0A0B", color: "#F0F0F2", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif" }}>
@@ -330,7 +390,6 @@ export default function MailDashboard() {
         {/* SIDEBAR */}
         <aside style={{ width: 240, borderRight: `1px solid ${border}`, background: "#0E0E10", display: "flex", flexDirection: "column", flexShrink: 0 }} className={`mail-sidebar ${sidebarOpen ? "open" : ""}`}>
           <div style={{ padding: "20px 16px" }}>
-            {/* Search */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: inputBg, border: `1px solid ${searchFocused ? "#3B82F6" : border}`, borderRadius: 12, transition: "border-color 200ms" }}>
               <Search size={16} style={{ color: "#636370", flexShrink: 0 }} />
               <input type="text" placeholder="Search emails..." value={searchQ} onChange={e => setSearchQ(e.target.value)} onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)}
@@ -344,7 +403,7 @@ export default function MailDashboard() {
               const count = f.key === "inbox" ? unreadCount : 0;
               return (
                 <button key={f.key} onClick={() => selectFolder(f.key)}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 10, border: "none", background: active ? "rgba(255,255,255,0.06)" : "transparent", color: active ? "#F0F0F2" : "#9A9AA8", fontSize: 14, fontWeight: active ? 600 : 400, cursor: "pointer", textAlign: "left", marginBottom: 2, transition: "all 150ms", fontFamily: "inherit" }}>
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 10, border: "none", background: active ? "rgba(255,255,255,0.06)" : "transparent", color: active ? "#F0F0F2" : "#9A9AA8", fontSize: 14, fontWeight: active ? 600 : 400, cursor: "pointer", textAlign: "left", marginBottom: 2, fontFamily: "inherit" }}>
                   <Icon size={18} style={{ color: active ? "#3B82F6" : "#636370" }} />
                   <span style={{ flex: 1 }}>{f.label}</span>
                   {count > 0 && <span style={{ fontSize: 12, fontWeight: 600, color: "#3B82F6", background: "rgba(59,130,246,0.1)", padding: "2px 8px", borderRadius: 6 }}>{count}</span>}
@@ -362,10 +421,43 @@ export default function MailDashboard() {
 
         {/* EMAIL LIST */}
         <div style={{ width: 400, borderRight: `1px solid ${border}`, display: "flex", flexDirection: "column", flexShrink: 0, background: "#0D0D0F" }} className="mail-list-panel">
+          {/* List header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${borderSubtle}`, flexShrink: 0 }}>
-            <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 15, fontWeight: 600, color: "#F0F0F2", textTransform: "capitalize" }}>{folder}</span>
-            {filtered.length > 0 && <span style={{ fontSize: 13, color: "#636370" }}>{filtered.length} {filtered.length === 1 ? "message" : "messages"}</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {filtered.length > 0 && <Checkbox checked={allSelected} onChange={toggleSelectAll} />}
+              <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 15, fontWeight: 600, color: "#F0F0F2", textTransform: "capitalize" }}>{folder}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {folder === "trash" && emails.length > 0 && (
+                <button onClick={clearTrash} disabled={deleting}
+                  style={{ fontSize: 12, padding: "4px 12px", borderRadius: 6, border: "1px solid #F87171", background: "rgba(248,113,113,0.08)", color: "#F87171", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                  <Trash2 size={12} /> Clear trash
+                </button>
+              )}
+              {filtered.length > 0 && <span style={{ fontSize: 13, color: "#636370" }}>{filtered.length}</span>}
+            </div>
           </div>
+
+          {/* Multi-select action bar */}
+          {someSelected && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: `1px solid ${border}`, background: "rgba(59,130,246,0.06)", flexShrink: 0 }}>
+              <span style={{ fontSize: 13, color: "#9A9AA8" }}>{selIds.length} selected</span>
+              <div style={{ display: "flex", gap: 6 }}>
+                {folder === "trash" ? (
+                  <button onClick={permanentlyDelete} disabled={deleting} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, border: "1px solid #F87171", background: "rgba(248,113,113,0.1)", color: "#F87171", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                    <Trash size={14} /> {deleting ? "Deleting..." : "Delete permanently"}
+                  </button>
+                ) : (
+                  <button onClick={() => moveToTrash()} disabled={deleting} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, border: "1px solid #F87171", background: "rgba(248,113,113,0.1)", color: "#F87171", fontSize: 12, fontWeight: 500, cursor: "pointer" }}>
+                    <Trash2 size={14} /> {deleting ? "Moving..." : "Move to trash"}
+                  </button>
+                )}
+                <button onClick={clearSelection} style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "transparent", color: "#9A9AA8", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Email list */}
           <div style={{ flex: 1, overflowY: "auto" }}>
             {loading ? (
               <><Skel /><Skel /><Skel /><Skel /><Skel /></>
@@ -379,7 +471,7 @@ export default function MailDashboard() {
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24 }}>
                 <Mail size={40} style={{ color: "#2A2A2E", marginBottom: 16 }} />
                 <p style={{ fontSize: 15, color: "#636370", fontWeight: 500 }}>No emails</p>
-                <p style={{ fontSize: 13, color: "#3D3D42", marginTop: 4 }}>{searchQ ? "No matches found" : folder === "inbox" ? "Your inbox is empty" : "Nothing here yet"}</p>
+                <p style={{ fontSize: 13, color: "#3D3D42", marginTop: 4 }}>{searchQ ? "No matches found" : folder === "inbox" ? "Your inbox is empty" : folder === "trash" ? "Trash is empty" : "Nothing here yet"}</p>
                 {!searchQ && folder === "inbox" && (
                   <button onClick={() => { setComposeTo(""); setComposeSubj(""); setComposeOpen(true); }}
                     style={{ marginTop: 20, padding: "10px 24px", borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: "#9A9AA8", fontSize: 13, cursor: "pointer" }}>Compose</button>
@@ -388,21 +480,24 @@ export default function MailDashboard() {
             ) : (
               filtered.map(email => {
                 const isSel = selId === email.id;
+                const isChecked = selIds.includes(email.id);
                 return (
-                  <button key={email.id} onClick={() => { setSelId(email.id); setSidebarOpen(false); }}
-                    style={{ width: "100%", textAlign: "left", padding: "16px 20px", borderBottom: `1px solid ${borderSubtle}`, background: isSel ? "rgba(59,130,246,0.06)" : "transparent", border: "none", borderLeft: `3px solid ${isSel ? "#3B82F6" : "transparent"}`, cursor: "pointer", display: "block", transition: "background 150ms", fontFamily: "inherit" }}>
-                    <div style={{ display: "flex", gap: 14 }}>
-                      <Avatar email={email.from} name={dn(email)} size={44} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                          <span style={{ fontSize: 15, fontWeight: email.unread ? 700 : 500, color: email.unread ? "#F0F0F2" : "#9A9AA8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dn(email)}</span>
-                          <span style={{ fontSize: 12, color: "#636370", flexShrink: 0, marginLeft: 12 }}>{rDate(email.date)}</span>
-                        </div>
-                        <p style={{ fontSize: 14, fontWeight: email.unread ? 600 : 400, color: email.unread ? "#D4D4D8" : "#636370", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{email.subject}</p>
-                        {email.preview && <p style={{ fontSize: 13, color: "#3D3D42", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.preview}</p>}
-                      </div>
+                  <div key={email.id}
+                    onClick={() => { setSelId(email.id); setSidebarOpen(false); }}
+                    style={{ display: "flex", alignItems: "flex-start", padding: "14px 20px", borderBottom: `1px solid ${borderSubtle}`, background: isSel ? "rgba(59,130,246,0.06)" : "transparent", borderLeft: `3px solid ${isSel ? "#3B82F6" : "transparent"}`, cursor: "pointer", transition: "background 150ms" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 4 }}>
+                      <Checkbox checked={isChecked} onChange={() => toggleSelect(email.id)} />
+                      <Avatar email={email.from} name={dn(email)} size={40} />
                     </div>
-                  </button>
+                    <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 14, fontWeight: email.unread ? 700 : 500, color: email.unread ? "#F0F0F2" : "#9A9AA8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dn(email)}</span>
+                        <span style={{ fontSize: 12, color: "#636370", flexShrink: 0, marginLeft: 12 }}>{rDate(email.date)}</span>
+                      </div>
+                      <p style={{ fontSize: 14, fontWeight: email.unread ? 600 : 400, color: email.unread ? "#D4D4D8" : "#636370", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{email.subject}</p>
+                      {email.preview && <p style={{ fontSize: 13, color: "#3D3D42", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email.preview}</p>}
+                    </div>
+                  </div>
                 );
               })
             )}
@@ -415,32 +510,27 @@ export default function MailDashboard() {
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={28} className="animate-spin" style={{ color: "#636370" }} /></div>
           ) : rd && selId ? (
             <>
-              {/* Reader toolbar */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 28px", borderBottom: `1px solid ${borderSubtle}`, flexShrink: 0 }}>
-                <button onClick={reply} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.04)", color: "#9A9AA8", fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 150ms" }}><Reply size={15} /> Reply</button>
+                <button onClick={reply} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.04)", color: "#9A9AA8", fontSize: 13, fontWeight: 500, cursor: "pointer" }}><Reply size={15} /> Reply</button>
+                {folder !== "trash" && selId && (
+                  <button onClick={() => { moveToTrash(selId); }} disabled={deleting} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, border: "none", background: "rgba(255,255,255,0.04)", color: "#9A9AA8", fontSize: 13, fontWeight: 500, cursor: "pointer" }}><Trash2 size={15} /> Trash</button>
+                )}
               </div>
-              {/* Email header */}
               <div style={{ padding: "32px 28px 24px", borderBottom: `1px solid ${borderSubtle}` }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
                   <Avatar email={rd.from} size={52} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h1 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 24, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>{rd.subject || "(no subject)"}</h1>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: "#D4D4D8" }}>{rd.from}</span>
-                      <span style={{ fontSize: 13, color: "#3D3D42" }}>{fDate(rd.date)}</span>
-                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 15, fontWeight: 600, color: "#D4D4D8" }}>{rd.from}</span><span style={{ fontSize: 13, color: "#3D3D42" }}>{fDate(rd.date)}</span></div>
                   </div>
                 </div>
               </div>
-              {/* Email body */}
               <div style={{ flex: 1, padding: "28px", maxWidth: 800 }}>
                 {rd.html ? (
                   <div style={{ fontSize: 15, lineHeight: 1.8, color: "#D4D4D8" }} dangerouslySetInnerHTML={{ __html: clean(rd.html) }} />
                 ) : rd.body ? (
                   <div style={{ fontSize: 15, lineHeight: 1.8, color: "#D4D4D8", whiteSpace: "pre-wrap" }}>{rd.body}</div>
-                ) : (
-                  <p style={{ color: "#3D3D42", fontStyle: "italic" }}>Empty message</p>
-                )}
+                ) : <p style={{ color: "#3D3D42", fontStyle: "italic" }}>Empty message</p>}
               </div>
             </>
           ) : selId === null && filtered.length > 0 ? (
@@ -457,7 +547,6 @@ export default function MailDashboard() {
         </div>
       </div>
 
-      {/* COMPOSE MODAL */}
       <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} onSent={() => { if (folder === "sent") fetchEmails(); }} initialTo={composeTo} initialSubject={composeSubj} myEmail={myEmail || ""} />
     </div>
   );
