@@ -93,15 +93,15 @@ function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => voi
 
 function ClaimScreen({ onSuccess }: { onSuccess: (email: string) => void }) {
   const [uname, setUname] = useState("");
-  const [pw, setPw] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState(false);
 
   const claim = async () => {
-    if (!uname || !pw) return;
+    if (!uname) return;
     setLoading(true); setError("");
     try {
+      const pw = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10).toUpperCase();
       const r = await fetch("/api/claim-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: uname, domain: "alione.cc", password: pw }) });
       const d = await r.json();
       if (d.success) { setOk(true); onSuccess(d.email); } else setError(d.error || "Failed");
@@ -128,14 +128,10 @@ function ClaimScreen({ onSuccess }: { onSuccess: (email: string) => void }) {
               <div style={{ background: "#141416", border: "1px solid #2A2A2E", borderRadius: "0 14px 14px 0", padding: "14px 18px", fontSize: 16, color: "#636370", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>@alione.cc</div>
             </div>
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#9A9AA8", marginBottom: 8 }}>Password</label>
-            <input type="password" placeholder="Create a strong password" value={pw} onChange={e => setPw(e.target.value)} style={inputStyle} />
-          </div>
           {error && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 12, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#F87171", fontSize: 14 }}><AlertCircle size={16} />{error}</div>}
           {ok && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 12, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", color: "#34D399", fontSize: 14 }}><CheckCircle2 size={16} />{uname}@alione.cc is yours!</div>}
-          <button onClick={claim} disabled={loading || ok || !uname || !pw}
-            style={{ width: "100%", padding: "16px 24px", borderRadius: 14, border: "none", background: "#F0F0F2", color: "#0A0A0B", fontSize: 16, fontWeight: 600, fontFamily: "var(--font-display), sans-serif", cursor: loading || ok ? "not-allowed" : "pointer", opacity: loading || ok || !uname || !pw ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <button onClick={claim} disabled={loading || ok || !uname}
+            style={{ width: "100%", padding: "16px 24px", borderRadius: 14, border: "none", background: "#F0F0F2", color: "#0A0A0B", fontSize: 16, fontWeight: 600, fontFamily: "var(--font-display), sans-serif", cursor: loading || ok ? "not-allowed" : "pointer", opacity: loading || ok || !uname ? 0.4 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             {loading ? <><Loader2 size={18} className="animate-spin" /> Creating...</> : ok ? <><CheckCircle2 size={18} /> Claimed!</> : "Claim Email"}
           </button>
         </div>
