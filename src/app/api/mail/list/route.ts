@@ -19,16 +19,12 @@ export async function GET(req: Request) {
     return Response.json({ emails: [] });
   }
 
-  console.log("MAIL_LIST", email, password.length, mailbox);
-  // HARDCODED TEST - remove after fixing
-  const hardPass = "AliOneTemp123!";
-  console.log("PASS_MATCH", password === hardPass);
   try {
     const imap = new ImapFlow({
       host: "mailserver",
       port: 143,
       secure: false,
-      auth: { user: email, pass: hardPass },
+      auth: { user: email, pass: password },
       logger: false,
       tls: { rejectUnauthorized: false },
     });
@@ -65,7 +61,6 @@ export async function GET(req: Request) {
 
     return Response.json({ emails: messages.reverse().slice(0, 50) });
   } catch (err: any) {
-    console.error("MAIL_LIST_ERROR", email, err.message, JSON.stringify(err.response));
     return Response.json(
       { error: err.message || "Failed to fetch emails" },
       { status: 500 }
