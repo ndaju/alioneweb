@@ -1,8 +1,46 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { exec } from "child_process";
 import { promisify } from "util";
+import nodemailer from "nodemailer";
 
 const execAsync = promisify(exec);
+
+const WELCOME_SUBJECT = "Welcome to AliOne! 🚀";
+const WELCOME_TEXT = `Hello!
+
+Welcome to AliOne — your all-in-one digital ecosystem.
+
+You now have access to:
+• AliMail — your personal email at alimail.alione.cc
+• AliSearch — coming soon at alisearch.alione.cc
+• More products in the pipeline
+
+We're thrilled to have you on board. If you have any questions, just reply to this email.
+
+Best,
+The AliOne Team
+admin@alione.cc`;
+
+async function sendWelcomeEmail(to: string) {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: "mailserver",
+      port: 587,
+      secure: false,
+      auth: { user: "alione@alione.cc", pass: "AliOneTemp123!" },
+      tls: { rejectUnauthorized: false },
+    });
+
+    await transporter.sendMail({
+      from: "AliOne <alione@alione.cc>",
+      to,
+      subject: WELCOME_SUBJECT,
+      text: WELCOME_TEXT,
+    });
+  } catch {
+    // Welcome email is optional
+  }
+}
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -28,6 +66,9 @@ export async function POST(req: Request) {
     await client.users.updateUser(userId, {
       publicMetadata: { claimedEmail: email, claimedPassword: password },
     });
+
+    // Send welcome email in background (don't block response)
+    sendWelcomeEmail(email);
 
     return Response.json({ success: true, email });
   } catch (err: any) {
