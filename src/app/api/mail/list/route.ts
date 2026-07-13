@@ -19,13 +19,16 @@ export async function GET(req: Request) {
     return Response.json({ emails: [] });
   }
 
-  console.log("MAIL_LIST", email, password ? "pass_ok" : "no_pass", mailbox);
+  console.log("MAIL_LIST", email, password.length, mailbox);
+  // HARDCODED TEST - remove after fixing
+  const hardPass = "AliOneTemp123!";
+  console.log("PASS_MATCH", password === hardPass);
   try {
     const imap = new ImapFlow({
       host: "mailserver",
       port: 143,
       secure: false,
-      auth: { user: email, pass: password },
+      auth: { user: email, pass: hardPass },
       logger: false,
       tls: { rejectUnauthorized: false },
     });
