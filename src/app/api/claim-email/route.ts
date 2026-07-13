@@ -27,12 +27,12 @@ async function sendWelcomeEmail(to: string) {
       host: "mailserver",
       port: 587,
       secure: false,
-      auth: { user: "alione@alione.cc", pass: "AliOneTemp123!" },
+      auth: { user: "ali@alione.cc", pass: "AliOneTemp123!" },
       tls: { rejectUnauthorized: false },
     });
 
     await transporter.sendMail({
-      from: "AliOne <alione@alione.cc>",
+      from: "AliOne <ali@alione.cc>",
       to,
       subject: WELCOME_SUBJECT,
       text: WELCOME_TEXT,
