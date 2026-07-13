@@ -8,6 +8,7 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const uid = parseInt(searchParams.get("uid") || "");
+  const mailbox = searchParams.get("mailbox") || "INBOX";
 
   if (!uid) {
     return Response.json({ error: "Missing uid" }, { status: 400 });
@@ -34,7 +35,7 @@ export async function GET(req: Request) {
     });
 
     await imap.connect();
-    const lock = await imap.getMailboxLock("INBOX");
+    const lock = await imap.getMailboxLock(mailbox);
     const msg = await imap.fetchOne(uid, { source: true });
     lock.release();
     await imap.logout();
