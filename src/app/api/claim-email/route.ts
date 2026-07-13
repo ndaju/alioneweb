@@ -5,7 +5,7 @@ import nodemailer from "nodemailer";
 
 const execAsync = promisify(exec);
 
-const WELCOME_SUBJECT = "Welcome to AliOne! 🚀";
+const WELCOME_SUBJECT = "Welcome to AliOne!";
 const WELCOME_TEXT = `Hello!
 
 Welcome to AliOne — your all-in-one digital ecosystem.
@@ -21,18 +21,22 @@ Best,
 The AliOne Team
 admin@alione.cc`;
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "ali@alione.cc";
+const ADMIN_PASS = process.env.ADMIN_PASS || "";
+
 async function sendWelcomeEmail(to: string) {
+  if (!ADMIN_PASS) return;
   try {
     const transporter = nodemailer.createTransport({
       host: "mailserver",
       port: 587,
       secure: false,
-      auth: { user: "ali@alione.cc", pass: "AliOneTemp123!" },
+      auth: { user: ADMIN_EMAIL, pass: ADMIN_PASS },
       tls: { rejectUnauthorized: false },
     });
 
     await transporter.sendMail({
-      from: "AliOne <ali@alione.cc>",
+      from: `AliOne <${ADMIN_EMAIL}>`,
       to,
       subject: WELCOME_SUBJECT,
       text: WELCOME_TEXT,
