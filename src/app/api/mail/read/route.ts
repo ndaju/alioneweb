@@ -36,7 +36,7 @@ export async function GET(req: Request) {
 
     await imap.connect();
     const lock = await imap.getMailboxLock(mailbox);
-    const msg = await imap.fetchOne(uid, { source: true });
+    const msg = await imap.fetchOne(uid, { uid: true, source: true });
     lock.release();
     await imap.logout();
 
