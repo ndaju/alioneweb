@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     return Response.json({ emails: [] });
   }
 
-  console.log("MAIL_LIST", email, mailbox);
+  console.log("MAIL_LIST", email, password ? "pass_ok" : "no_pass", mailbox);
   try {
     const imap = new ImapFlow({
       host: "mailserver",
