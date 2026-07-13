@@ -20,6 +20,7 @@ export async function GET(req: Request) {
   }
 
   console.log("MAIL_LIST", email, mailbox);
+  try {
     const imap = new ImapFlow({
       host: "mailserver",
       port: 143,
