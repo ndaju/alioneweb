@@ -21,29 +21,23 @@ Best,
 The AliOne Team
 admin@alione.cc`;
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "ali@alione.cc";
-const ADMIN_PASS = process.env.ADMIN_PASS || "";
-
-async function sendWelcomeEmail(to: string) {
-  if (!ADMIN_PASS) return;
+async function sendWelcomeEmail(fromEmail: string, fromPass: string, to: string) {
+  if (!fromEmail || !fromPass) return;
   try {
     const transporter = nodemailer.createTransport({
       host: "mailserver",
       port: 587,
       secure: false,
-      auth: { user: ADMIN_EMAIL, pass: ADMIN_PASS },
+      auth: { user: fromEmail, pass: fromPass },
       tls: { rejectUnauthorized: false },
     });
-
     await transporter.sendMail({
-      from: `AliOne <${ADMIN_EMAIL}>`,
+      from: `AliOne <${fromEmail}>`,
       to,
       subject: WELCOME_SUBJECT,
       text: WELCOME_TEXT,
     });
-  } catch {
-    // Welcome email is optional
-  }
+  } catch {}
 }
 
 export async function POST(req: Request) {
@@ -67,12 +61,16 @@ export async function POST(req: Request) {
     }
 
     const client = await clerkClient();
+    const sender = await client.users.getUser(userId);
+    const senderMeta = sender.publicMetadata as Record<string, unknown>;
+    const senderEmail = senderMeta.claimedEmail as string;
+    const senderPass = senderMeta.claimedPassword as string;
+
     await client.users.updateUser(userId, {
       publicMetadata: { claimedEmail: email, claimedPassword: password },
     });
 
-    // Send welcome email in background (don't block response)
-    sendWelcomeEmail(email);
+    sendWelcomeEmail(senderEmail || email, senderPass || password, email);
 
     return Response.json({ success: true, email });
   } catch (err: any) {
