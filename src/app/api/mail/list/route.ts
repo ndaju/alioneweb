@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     return Response.json({ emails: [] });
   }
 
-  try {
+  console.log("MAIL_LIST", email, mailbox);
     const imap = new ImapFlow({
       host: "mailserver",
       port: 143,
@@ -61,6 +61,7 @@ export async function GET(req: Request) {
 
     return Response.json({ emails: messages.reverse().slice(0, 50) });
   } catch (err: any) {
+    console.error("MAIL_LIST_ERROR", email, err.message, err.response?.command);
     return Response.json(
       { error: err.message || "Failed to fetch emails" },
       { status: 500 }
