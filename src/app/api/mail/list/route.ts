@@ -62,7 +62,7 @@ export async function GET(req: Request) {
 
     return Response.json({ emails: messages.reverse().slice(0, 50) });
   } catch (err: any) {
-    console.error("MAIL_LIST_ERROR", email, err.message, err.response?.command);
+    console.error("MAIL_LIST_ERROR", email, err.message, JSON.stringify(err.response));
     return Response.json(
       { error: err.message || "Failed to fetch emails" },
       { status: 500 }
