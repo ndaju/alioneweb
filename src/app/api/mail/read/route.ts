@@ -36,18 +36,20 @@ export async function GET(req: Request) {
 
     await imap.connect();
     const lock = await imap.getMailboxLock(mailbox);
-    const msg = await imap.fetchOne(uid, { uid: true, source: true });
+    let msg: FetchMessageObject | null = null;
+    try {
+      msg = await imap.fetchOne(uid, { uid: true, source: true });
+    } catch {
+      // UID not found
+    }
     lock.release();
     await imap.logout();
 
-    if (!msg) {
+    if (!msg || !msg.source) {
       return Response.json({ error: "Email not found" }, { status: 404 });
     }
 
-    const source = (msg as FetchMessageObject).source;
-    if (!source) {
-      return Response.json({ error: "Email not found" }, { status: 404 });
-    }
+    const source = msg.source;
 
     const parsed = await simpleParser(source);
 
