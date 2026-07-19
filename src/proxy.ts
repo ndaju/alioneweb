@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isPublicRoute = createRouteMatcher(["/", "/sign-in(.*)", "/sign-up(.*)"]);
+const isPublicRoute = createRouteMatcher(["/", "/sign-in(.*)", "/sign-up(.*)", "/mail-landing"]);
 
 const MAIL_HOSTS = ["mail.alione.cc", "alimail.alione.cc"];
 
@@ -12,26 +12,35 @@ export default clerkMiddleware(async (auth, request) => {
   const isMailHost = MAIL_HOSTS.some(h => host.startsWith(h));
 
   if (isMailHost) {
-    // Let API and static files pass through
+    // Let API, static files, and landing page pass through
     if (
       url.pathname.startsWith("/api") ||
       url.pathname.startsWith("/_next") ||
       url.pathname.startsWith("/favicon") ||
+      url.pathname.startsWith("/mail-landing") ||
       url.pathname.match(/\.(png|jpg|ico|svg|css|js)$/)
     ) {
       return NextResponse.next();
     }
 
-    // If not signed in and not already on sign-in, redirect to sign-in
     const { userId } = await auth();
-    if (!userId && !url.pathname.startsWith("/sign-in") && !url.pathname.startsWith("/sign-up")) {
-      const signInUrl = new URL("/sign-in", url.origin);
-      signInUrl.searchParams.set("redirect_url", "/dashboard/mail");
-      return NextResponse.redirect(signInUrl);
+
+    // If not signed in, show landing at root
+    if (!userId) {
+      if (url.pathname === "/") {
+        url.pathname = "/mail-landing";
+        return NextResponse.rewrite(url);
+      }
+      if (!url.pathname.startsWith("/sign-in") && !url.pathname.startsWith("/sign-up")) {
+        const signInUrl = new URL("/sign-in", url.origin);
+        signInUrl.searchParams.set("redirect_url", "/dashboard/mail");
+        return NextResponse.redirect(signInUrl);
+      }
+      return NextResponse.next();
     }
 
     // If signed in, rewrite everything to /dashboard/mail
-    if (userId && url.pathname !== "/dashboard/mail") {
+    if (url.pathname !== "/dashboard/mail") {
       url.pathname = "/dashboard/mail";
       return NextResponse.rewrite(url);
     }
