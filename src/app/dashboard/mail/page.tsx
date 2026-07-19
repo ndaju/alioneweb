@@ -279,11 +279,14 @@ export default function MailDashboard() {
 
   useEffect(() => {
     if (!selId || !isLoaded || !myEmail) return;
+    let cancelled = false;
     setLoadingBody(true); setRd(null);
     const mb = MAILBOX_MAP[folder];
     fetch(`/api/mail/read?uid=${selId}&mailbox=${encodeURIComponent(mb || "INBOX")}`).then(r => r.json()).then(d => {
+      if (cancelled) return;
       if (d.body || d.html) { setRd(d); setEmails(p => p.map(e => e.id === selId ? { ...e, body: d.body, html: d.html, unread: false } : e)); }
-    }).catch(() => {}).finally(() => setLoadingBody(false));
+    }).catch(() => {}).finally(() => { if (!cancelled) setLoadingBody(false); });
+    return () => { cancelled = true; };
   }, [selId, isLoaded, myEmail, folder]);
 
   useEffect(() => { if (readerRef.current) readerRef.current.scrollTop = 0; }, [selId]);
