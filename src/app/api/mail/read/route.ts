@@ -1,6 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { ImapFlow, type FetchMessageObject } from "imapflow";
 import { simpleParser } from "mailparser";
+import { createHash } from "crypto";
 
 export async function GET(req: Request) {
   const { userId } = await auth();
@@ -69,10 +70,12 @@ export async function GET(req: Request) {
     }
 
     const fromAddr = parsed.from?.value?.[0]?.address || "";
+    const fromHash = createHash("md5").update(fromAddr.trim().toLowerCase()).digest("hex");
 
     return Response.json({
       from: parsed.from?.text || "",
       fromAddr,
+      fromHash,
       subject: parsed.subject || "",
       date: parsed.date?.toISOString() || "",
       body: parsed.text || html,

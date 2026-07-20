@@ -1,6 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
+import { createHash } from "crypto";
 
 export async function GET(req: Request) {
   const { userId } = await auth();
@@ -44,10 +45,12 @@ export async function GET(req: Request) {
           const parsed = await simpleParser(msg.source!);
           preview = (parsed.text || parsed.html || "").slice(0, 120);
         } catch {}
+        const fromAddr = msg.envelope.from?.[0]?.address || "unknown";
         messages.push({
           id: msg.uid,
-          from: msg.envelope.from?.[0]?.address || "unknown",
+          from: fromAddr,
           fromName: msg.envelope.from?.[0]?.name || "",
+          fromHash: createHash("md5").update(fromAddr.trim().toLowerCase()).digest("hex"),
           subject: msg.envelope.subject || "(no subject)",
           date: msg.envelope.date?.toISOString() || "",
           seen: msg.flags ? msg.flags.has("\\Seen") : true,
