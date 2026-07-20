@@ -56,14 +56,15 @@ function clean(html: string) {
 }
 
 function Avatar({ email, name, size = 40, hash }: { email: string; name?: string; size?: number; hash?: string }) {
-  const [imgErr, setImgErr] = useState(false);
+  const [imgErr, setImgErr] = useState(0);
   const [bg, fg] = ac(email);
   const l = init(name || "", email);
-  const imgUrl = hash && !imgErr ? `https://www.gravatar.com/avatar/${hash}?d=mp&s=${size * 2}` : null;
+  const addr = email.trim().toLowerCase();
+  const imgUrl = !imgErr ? (imgErr === 0 ? `https://unavatar.io/${encodeURIComponent(addr)}` : hash ? `https://www.gravatar.com/avatar/${hash}?d=identicon&s=${size * 2}` : null) : null;
   return (
-    <div style={{ width: size, height: size, borderRadius: size * 0.3, background: imgUrl ? "transparent" : `linear-gradient(135deg, ${bg}40, ${fg}30)`, border: `1px solid ${imgUrl ? "transparent" : bg + "30"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", position: "relative" }}>
-      {imgUrl ? <img src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} onError={() => setImgErr(true)} /> : null}
-      {!imgUrl ? <span style={{ fontSize: size * 0.38, fontWeight: 600, color: fg, fontFamily: "var(--font-display), sans-serif" }}>{l}</span> : null}
+    <div style={{ width: size, height: size, borderRadius: size * 0.3, background: `linear-gradient(135deg, ${bg}40, ${fg}30)`, border: `1px solid ${bg}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", position: "relative" }}>
+      {imgUrl ? <img key={imgUrl} src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", top: 0, left: 0 }} onError={() => setImgErr(imgErr + 1)} /> : null}
+      <span style={{ fontSize: size * 0.38, fontWeight: 600, color: fg, fontFamily: "var(--font-display), sans-serif", position: "relative", zIndex: 1 }}>{l}</span>
     </div>
   );
 }
@@ -530,11 +531,11 @@ export default function MailDashboard() {
                   </div>
                 </div>
               </div>
-              <div style={{ flex: 1, padding: "28px", maxWidth: 800, minHeight: 0, overflowY: "auto" }}>
+              <div style={{ flex: 1, padding: "28px", maxWidth: 800 }}>
                 {rd.html ? (
-                  <div style={{ fontSize: 15, lineHeight: 1.8, color: "#D4D4D8", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: clean(rd.html) }} />
+                  <div style={{ fontSize: 15, lineHeight: 1.8, wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: clean(rd.html) }} />
                 ) : rd.body ? (
-                  <div style={{ fontSize: 15, lineHeight: 1.8, color: "#D4D4D8", whiteSpace: "pre-wrap" }}>{rd.body}</div>
+                  <div style={{ fontSize: 15, lineHeight: 1.8, whiteSpace: "pre-wrap", color: "#D4D4D8" }}>{rd.body}</div>
                 ) : <p style={{ color: "#3D3D42", fontStyle: "italic" }}>Empty message</p>}
               </div>
             </>
