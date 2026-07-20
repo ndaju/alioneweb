@@ -11,7 +11,7 @@ import {
 
 type Email = { id: number; from: string; fromName: string; subject: string; preview: string; body: string; html: string; date: string; unread: boolean; seen: boolean };
 type Folder = "inbox" | "sent" | "drafts" | "trash";
-type Rd = { body: string; html: string; from: string; subject: string; date: string };
+type Rd = { body: string; html: string; from: string; fromAddr: string; subject: string; date: string };
 
 const FOLDERS: { key: Folder; label: string; icon: typeof Inbox }[] = [
   { key: "inbox", label: "Inbox", icon: Inbox },
@@ -55,11 +55,16 @@ function clean(html: string) {
     .replace(/style="[^"]*position:\s*fixed[^"]*"/gi, "");
 }
 
-function Avatar({ email, name, size = 40 }: { email: string; name?: string; size?: number }) {
+function Avatar({ email, name, size = 40, addr }: { email: string; name?: string; size?: number; addr?: string }) {
+  const [imgErr, setImgErr] = useState(false);
   const [bg, fg] = ac(email);
   const l = init(name || "", email);
+  const imgUrl = addr && !imgErr ? `https://unavatar.io/${encodeURIComponent(addr.trim().toLowerCase())}?fallback=false` : null;
   return (
-    <div style={{ width: size, height: size, borderRadius: size * 0.3, background: `linear-gradient(135deg, ${bg}40, ${fg}30)`, border: `1px solid ${bg}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.38, fontWeight: 600, color: fg, flexShrink: 0, fontFamily: "var(--font-display), sans-serif" }}>{l}</div>
+    <div style={{ width: size, height: size, borderRadius: size * 0.3, background: imgUrl ? "transparent" : `linear-gradient(135deg, ${bg}40, ${fg}30)`, border: `1px solid ${imgUrl ? "transparent" : bg + "30"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", position: "relative" }}>
+      {imgUrl ? <img src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} onError={() => setImgErr(true)} /> : null}
+      {!imgUrl ? <span style={{ fontSize: size * 0.38, fontWeight: 600, color: fg, fontFamily: "var(--font-display), sans-serif" }}>{l}</span> : null}
+    </div>
   );
 }
 
@@ -487,7 +492,7 @@ export default function MailDashboard() {
                     style={{ display: "flex", alignItems: "flex-start", padding: "14px 20px", borderBottom: `1px solid ${borderSubtle}`, background: isSel ? "rgba(59,130,246,0.06)" : "transparent", borderLeft: `3px solid ${isSel ? "#3B82F6" : "transparent"}`, cursor: "pointer", transition: "background 150ms" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 4 }}>
                       <Checkbox checked={isChecked} onChange={() => toggleSelect(email.id)} />
-                      <Avatar email={email.from} name={dn(email)} size={40} />
+                      <Avatar email={email.from} name={dn(email)} size={40} addr={email.from} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
@@ -518,7 +523,7 @@ export default function MailDashboard() {
               </div>
               <div style={{ padding: "32px 28px 24px", borderBottom: `1px solid ${borderSubtle}` }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
-                  <Avatar email={rd.from} size={52} />
+                  <Avatar email={rd.from} size={52} addr={rd.fromAddr} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h1 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 24, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>{rd.subject || "(no subject)"}</h1>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 15, fontWeight: 600, color: "#D4D4D8" }}>{rd.from}</span><span style={{ fontSize: 13, color: "#3D3D42" }}>{fDate(rd.date)}</span></div>

@@ -54,12 +54,29 @@ export async function GET(req: Request) {
 
     const parsed = await simpleParser(source);
 
+    const cidMap: Record<string, string> = {};
+    if (parsed.attachments?.length) {
+      for (const att of parsed.attachments) {
+        if (att.contentId && att.content?.length < 524288) {
+          cidMap[att.contentId] = `data:${att.contentType};base64,${att.content.toString("base64")}`;
+        }
+      }
+    }
+
+    let html = parsed.html || "";
+    if (Object.keys(cidMap).length) {
+      html = html.replace(/cid:([^"'\s>]+)/gi, (_, cid) => cidMap[cid] || `cid:${cid}`);
+    }
+
+    const fromAddr = parsed.from?.value?.[0]?.address || "";
+
     return Response.json({
       from: parsed.from?.text || "",
+      fromAddr,
       subject: parsed.subject || "",
       date: parsed.date?.toISOString() || "",
-      body: parsed.text || parsed.html || "",
-      html: parsed.html || "",
+      body: parsed.text || html,
+      html,
     });
   } catch (err: any) {
     return Response.json(
