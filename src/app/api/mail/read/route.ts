@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     const lock = await imap.getMailboxLock(mailbox);
     let msg: FetchMessageObject | null = null;
     try {
-      const result = await imap.fetchOne(uid, { uid: true, source: true });
+      const result = await imap.fetchOne(uid, { source: true }, { uid: true });
       if (result) msg = result;
     } catch {
       // UID not found
