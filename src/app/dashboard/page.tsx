@@ -1,21 +1,11 @@
 "use client";
 
 import { useAuth, useUser } from "@clerk/nextjs";
-import { Mail, HardDrive, Image, Search, Loader2, LogOut } from "lucide-react";
+import { Mail, HardDrive, Image, Loader2, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
 
 const products = [
-  {
-    id: "search",
-    name: "AliSearch",
-    desc: "Anonymous search engine. No profiling. No tracking. Just results.",
-    icon: Search,
-    href: "https://alisearch.alione.cc",
-    iconClass: "product-icon product-icon-search",
-    status: "live",
-    features: ["Anonymous", "No Profiling", "Fast Results", "Transparent Ranking"],
-  },
   {
     id: "mail",
     name: "AliOne Mail",
@@ -75,8 +65,10 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-4">
             <span style={{ fontSize: 14, color: "var(--text-secondary, #9A9AA8)", display: "none" }} className="sm:block">{email}</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: "var(--radius-md, 12px)", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, color: "var(--text-secondary, #9A9AA8)" }}>{initial}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "var(--radius-md, 12px)", overflow: "hidden", background: "var(--bg-subtle, #1C1C1F)", border: "1px solid var(--border, #2A2A2E)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {user?.imageUrl ? <img src={user.imageUrl} alt="" style={{ width: 36, height: 36, objectFit: "cover" }} /> : <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary, #9A9AA8)" }}>{initial}</span>}
+                </div>
               <button onClick={() => signOut()} style={{ padding: 8, borderRadius: "var(--radius-md, 12px)", color: "var(--text-tertiary, #636370)", cursor: "pointer", background: "none", border: "none", transition: "color 150ms" }} onMouseEnter={e => e.currentTarget.style.color = "var(--text, #F0F0F2)"} onMouseLeave={e => e.currentTarget.style.color = "var(--text-tertiary, #636370)"}>
                 <LogOut size={16} />
               </button>
@@ -121,20 +113,6 @@ export default function DashboardPage() {
                       ))}
                     </div>
                     <div className="product-card-visual">
-                      {product.id === "search" && (
-                        <div className="search-mockup">
-                          <div className="search-logo-text">AliSearch</div>
-                          <div className="search-bar-mock">
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/><line x1="10" y1="10" x2="13" y2="13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                            <span>Search privately...</span>
-                          </div>
-                          <div className="search-results-mock">
-                            <div className="search-result-line w-full"></div>
-                            <div className="search-result-line w-3-4"></div>
-                            <div className="search-result-line w-1-2"></div>
-                          </div>
-                        </div>
-                      )}
                       {product.id === "mail" && (
                         <div className="mail-mockup">
                           <div className="mail-sidebar">
