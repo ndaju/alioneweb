@@ -56,14 +56,20 @@ function clean(html: string) {
 }
 
 function Avatar({ email, name, size = 40, hash }: { email: string; name?: string; size?: number; hash?: string }) {
-  const [imgErr, setImgErr] = useState(0);
+  const [step, setStep] = useState(0);
   const [bg, fg] = ac(email);
   const l = init(name || "", email);
   const addr = email.trim().toLowerCase();
-  const imgUrl = !imgErr ? (imgErr === 0 ? `https://unavatar.io/${encodeURIComponent(addr)}` : hash ? `https://www.gravatar.com/avatar/${hash}?d=identicon&s=${size * 2}` : null) : null;
+  const domain = addr.split("@")[1] || "";
+  const urls = [
+    `https://unavatar.io/${encodeURIComponent(addr)}?fallback=false`,
+    hash ? `https://www.gravatar.com/avatar/${hash}?d=404&s=${size * 2}` : "",
+    domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : "",
+  ].filter(Boolean);
+  const imgUrl = step < urls.length ? urls[step] : null;
   return (
     <div style={{ width: size, height: size, borderRadius: size * 0.3, background: `linear-gradient(135deg, ${bg}40, ${fg}30)`, border: `1px solid ${bg}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", position: "relative" }}>
-      {imgUrl ? <img key={imgUrl} src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", top: 0, left: 0 }} onError={() => setImgErr(imgErr + 1)} /> : null}
+      {imgUrl ? <img key={`${step}-${imgUrl}`} src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", top: 0, left: 0 }} onError={() => setStep(step + 1)} /> : null}
       <span style={{ fontSize: size * 0.38, fontWeight: 600, color: fg, fontFamily: "var(--font-display), sans-serif", position: "relative", zIndex: 1 }}>{l}</span>
     </div>
   );
