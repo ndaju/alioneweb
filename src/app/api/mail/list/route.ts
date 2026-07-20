@@ -62,7 +62,18 @@ export async function GET(req: Request) {
 
     await imap.logout();
 
-    return Response.json({ emails: messages.reverse().slice(0, 50) });
+    const emailToPhoto: Record<string, string> = {};
+    try {
+      const users = await client.users.getUserList({ limit: 100 });
+      for (const u of users.data) {
+        const um = u.publicMetadata as Record<string, unknown>;
+        if (um.claimedEmail && u.imageUrl) {
+          emailToPhoto[um.claimedEmail as string] = u.imageUrl;
+        }
+      }
+    } catch {}
+
+    return Response.json({ emails: messages.reverse().slice(0, 50).map(m => ({ ...m, photoUrl: emailToPhoto[m.from] || "" })) });
   } catch (err: any) {
     return Response.json(
       { error: err.message || "Failed to fetch emails" },

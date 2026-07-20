@@ -9,9 +9,9 @@ import {
   Menu, Paperclip, Trash, RotateCcw,
 } from "lucide-react";
 
-type Email = { id: number; from: string; fromName: string; fromHash: string; subject: string; preview: string; body: string; html: string; date: string; unread: boolean; seen: boolean };
+type Email = { id: number; from: string; fromName: string; fromHash: string; photoUrl: string; subject: string; preview: string; body: string; html: string; date: string; unread: boolean; seen: boolean };
 type Folder = "inbox" | "sent" | "drafts" | "trash";
-type Rd = { body: string; html: string; from: string; fromAddr: string; fromHash: string; subject: string; date: string };
+type Rd = { body: string; html: string; from: string; fromAddr: string; fromHash: string; photoUrl: string; subject: string; date: string };
 
 const FOLDERS: { key: Folder; label: string; icon: typeof Inbox }[] = [
   { key: "inbox", label: "Inbox", icon: Inbox },
@@ -55,13 +55,14 @@ function clean(html: string) {
     .replace(/style="[^"]*position:\s*fixed[^"]*"/gi, "");
 }
 
-function Avatar({ email, name, size = 40, hash }: { email: string; name?: string; size?: number; hash?: string }) {
-  const [step, setStep] = useState(0);
+function Avatar({ email, name, size = 40, hash, photoUrl }: { email: string; name?: string; size?: number; hash?: string; photoUrl?: string }) {
+  const [step, setStep] = useState(photoUrl ? -1 : 0);
   const [bg, fg] = ac(email);
   const l = init(name || "", email);
   const addr = email.trim().toLowerCase();
   const domain = addr.split("@")[1] || "";
   const urls = [
+    ...(photoUrl ? [photoUrl] : []),
     `https://unavatar.io/${encodeURIComponent(addr)}?fallback=false`,
     hash ? `https://www.gravatar.com/avatar/${hash}?d=404&s=${size * 2}` : "",
     domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : "",
@@ -69,8 +70,7 @@ function Avatar({ email, name, size = 40, hash }: { email: string; name?: string
   const imgUrl = step < urls.length ? urls[step] : null;
   return (
     <div style={{ width: size, height: size, borderRadius: size * 0.3, background: `linear-gradient(135deg, ${bg}40, ${fg}30)`, border: `1px solid ${bg}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", position: "relative" }}>
-      {imgUrl ? <img key={`${step}-${imgUrl}`} src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", top: 0, left: 0 }} onError={() => setStep(step + 1)} /> : null}
-      <span style={{ fontSize: size * 0.38, fontWeight: 600, color: fg, fontFamily: "var(--font-display), sans-serif", position: "relative", zIndex: 1 }}>{l}</span>
+      {imgUrl ? <img key={`${step}-${imgUrl}`} src={imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", top: 0, left: 0 }} onError={() => setStep(step + 1)} /> : <span style={{ fontSize: size * 0.38, fontWeight: 600, color: fg, fontFamily: "var(--font-display), sans-serif" }}>{l}</span>}
     </div>
   );
 }
@@ -290,7 +290,7 @@ export default function MailDashboard() {
     try {
       const r = await fetch(`/api/mail/list?mailbox=${encodeURIComponent(mb)}`);
       const d = await r.json();
-      if (d.emails) setEmails(d.emails.map((e: any) => ({ id: e.id, from: e.from, fromName: e.fromName || e.from, fromHash: e.fromHash || "", subject: e.subject, preview: e.preview || "", body: "", html: "", date: e.date, unread: !e.seen, seen: e.seen })));
+      if (d.emails) setEmails(d.emails.map((e: any) => ({ id: e.id, from: e.from, fromName: e.fromName || e.from, fromHash: e.fromHash || "", photoUrl: e.photoUrl || "", subject: e.subject, preview: e.preview || "", body: "", html: "", date: e.date, unread: !e.seen, seen: e.seen })));
       else if (d.error) setError(d.error);
     } catch { setError("Could not connect to mail server"); } finally { setLoading(false); }
   }, [folder]);
@@ -507,7 +507,7 @@ export default function MailDashboard() {
                     style={{ display: "flex", alignItems: "flex-start", padding: "14px 20px", borderBottom: `1px solid ${borderSubtle}`, background: isSel ? "rgba(59,130,246,0.06)" : "transparent", borderLeft: `3px solid ${isSel ? "#3B82F6" : "transparent"}`, cursor: "pointer", transition: "background 150ms" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 4 }}>
                       <Checkbox checked={isChecked} onChange={() => toggleSelect(email.id)} />
-                      <Avatar email={email.from} name={dn(email)} size={40} hash={email.fromHash} />
+                      <Avatar email={email.from} name={dn(email)} size={40} hash={email.fromHash} photoUrl={email.photoUrl} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
@@ -538,7 +538,7 @@ export default function MailDashboard() {
               </div>
               <div style={{ padding: "32px 28px 24px", borderBottom: `1px solid ${borderSubtle}` }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
-                  <Avatar email={rd.from} size={52} hash={rd.fromHash} />
+                  <Avatar email={rd.from} size={52} hash={rd.fromHash} photoUrl={rd.photoUrl} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h1 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 24, fontWeight: 700, color: "#F0F0F2", letterSpacing: "-0.02em", lineHeight: 1.2, marginBottom: 10 }}>{rd.subject || "(no subject)"}</h1>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 15, fontWeight: 600, color: "#D4D4D8" }}>{rd.from}</span><span style={{ fontSize: 13, color: "#3D3D42" }}>{fDate(rd.date)}</span></div>

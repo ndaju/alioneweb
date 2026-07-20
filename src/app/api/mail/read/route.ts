@@ -72,10 +72,23 @@ export async function GET(req: Request) {
     const fromAddr = parsed.from?.value?.[0]?.address || "";
     const fromHash = createHash("md5").update(fromAddr.trim().toLowerCase()).digest("hex");
 
+    let photoUrl = "";
+    try {
+      const users = await client.users.getUserList({ limit: 100 });
+      for (const u of users.data) {
+        const um = u.publicMetadata as Record<string, unknown>;
+        if (um.claimedEmail === fromAddr && u.imageUrl) {
+          photoUrl = u.imageUrl;
+          break;
+        }
+      }
+    } catch {}
+
     return Response.json({
       from: parsed.from?.text || "",
       fromAddr,
       fromHash,
+      photoUrl,
       subject: parsed.subject || "",
       date: parsed.date?.toISOString() || "",
       body: parsed.text || html,
