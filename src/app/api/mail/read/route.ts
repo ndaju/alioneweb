@@ -1,5 +1,5 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { ImapFlow } from "imapflow";
+import { ImapFlow, type FetchMessageObject } from "imapflow";
 import { simpleParser } from "mailparser";
 
 export async function GET(req: Request) {
@@ -36,7 +36,13 @@ export async function GET(req: Request) {
 
     await imap.connect();
     const lock = await imap.getMailboxLock(mailbox);
-    const msg = await imap.fetchOne(uid, { uid: true, source: true }).catch(() => false);
+    let msg: FetchMessageObject | null = null;
+    try {
+      const result = await imap.fetchOne(uid, { uid: true, source: true });
+      if (result) msg = result;
+    } catch {
+      // UID not found
+    }
     lock.release();
     await imap.logout();
 
