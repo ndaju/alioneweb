@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { to, subject, text } = await req.json();
+  const { to, subject, text, attachments } = await req.json();
   if (!to || !subject || !text) {
     return Response.json({ error: "Missing to, subject, or text" }, { status: 400 });
   }
@@ -21,6 +21,38 @@ export async function POST(req: Request) {
     return Response.json({ error: "No email claimed" }, { status: 400 });
   }
 
+  const isOwner = email === "alione@alione.cc" || email === "ali@alione.cc";
+  const quota = (meta.storageQuota as number) || 5 * 1024 * 1024 * 1024;
+
+  if (!isOwner) {
+    try {
+      const imap = new ImapFlow({
+        host: "mailserver", port: 143, secure: false,
+        auth: { user: email, pass: password }, logger: false,
+        tls: { rejectUnauthorized: false },
+      });
+      await imap.connect();
+      let totalUsed = 0;
+      for (const mb of ["INBOX", "Sent", "Drafts", "Trash"]) {
+        try {
+          const lock = await imap.getMailboxLock(mb);
+          try {
+            const s = await imap.status(mb, { messages: true });
+            if (s.messages && s.messages > 0) {
+              for await (const msg of imap.fetch(`${s.messages}:1`, { uid: true, size: true }, { uid: true })) {
+                totalUsed += msg.size || 0;
+              }
+            }
+          } finally { lock.release(); }
+        } catch {}
+      }
+      await imap.logout();
+      if (totalUsed >= quota) {
+        return Response.json({ error: "Storage full. Delete emails to free space.", overQuota: true }, { status: 507 });
+      }
+    } catch {}
+  }
+
   try {
     const transporter = nodemailer.createTransport({
       host: "mailserver",
@@ -30,12 +62,17 @@ export async function POST(req: Request) {
       tls: { rejectUnauthorized: false },
     });
 
-    const info = await transporter.sendMail({
-      from: email,
-      to,
-      subject,
-      text,
-    });
+    const mailOpts: nodemailer.SendMailOptions = { from: email, to, subject, text };
+
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      mailOpts.attachments = attachments.map((a: { filename: string; content: string; contentType: string }) => ({
+        filename: a.filename,
+        content: Buffer.from(a.content, "base64"),
+        contentType: a.contentType,
+      }));
+    }
+
+    const info = await transporter.sendMail(mailOpts);
 
     // Save a copy to the Sent folder via IMAP
     if (info.messageId) {

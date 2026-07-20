@@ -39,9 +39,15 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.next();
     }
 
-    // If signed in, rewrite everything to /dashboard/mail
-    if (url.pathname !== "/dashboard/mail") {
-      url.pathname = "/dashboard/mail";
+    // If signed in, rewrite to appropriate route
+    const isDashboardRoute = url.pathname.startsWith("/dashboard/mail");
+    if (!isDashboardRoute) {
+      // Preserve admin path
+      if (url.pathname === "/admin" || url.pathname.startsWith("/admin")) {
+        url.pathname = "/dashboard/mail/admin";
+      } else {
+        url.pathname = "/dashboard/mail";
+      }
       return NextResponse.rewrite(url);
     }
   }

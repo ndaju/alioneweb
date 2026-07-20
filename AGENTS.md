@@ -13,7 +13,9 @@ These API routes use `imapflow` and `mailparser` packages.
 ### Requirements
 1. **`next.config.ts`** must include `serverExternalPackages: ["imapflow", "mailparser"]` — without this, the standalone build will NOT include these packages in `/app/node_modules/`, causing MODULE_NOT_FOUND at runtime.
 
-2. **`tls: { rejectUnauthorized: false }`** must be set in the `ImapFlow` constructor options — the mailserver uses a self-signed certificate, and Node.js will throw `Error: self-signed certificate` during TLS handshake.
+2. **`fetchOne` API — `{ uid: true }` goes in 3rd arg (`FetchOptions`), NOT 2nd arg (`FetchQueryObject`)**. The `FetchQueryObject.uid` means "include UID in response", while `FetchOptions.uid` means "treat first arg as UID number". Wrong: `fetchOne(uid, { uid: true, source: true })` — this treats `uid` as a **sequence number**. Correct: `fetchOne(uid, { source: true }, { uid: true })`. This was the root cause of the off-by-one email display bug.
+
+3. **`tls: { rejectUnauthorized: false }`** must be set in the `ImapFlow` constructor options — the mailserver uses a self-signed certificate, and Node.js will throw `Error: self-signed certificate` during TLS handshake.
 
 3. **Empty INBOX handling** — Dovecot returns `Command failed` for `FETCH 1:*` on empty mailboxes. Always check `imap.status('INBOX', { messages: true })` first and only fetch if `messages > 0`.
 

@@ -12,6 +12,7 @@ import {
 type Email = { id: number; from: string; fromName: string; fromHash: string; photoUrl: string; subject: string; preview: string; body: string; html: string; date: string; unread: boolean; seen: boolean };
 type Folder = "inbox" | "sent" | "drafts" | "trash";
 type Rd = { body: string; html: string; from: string; fromAddr: string; fromHash: string; photoUrl: string; subject: string; date: string };
+type StorageInfo = { used: number; quota: number; messageCount: number; usedFormatted: string; quotaFormatted: string; percentage: number; isOwner: boolean; email: string };
 
 const FOLDERS: { key: Folder; label: string; icon: typeof Inbox }[] = [
   { key: "inbox", label: "Inbox", icon: Inbox },
@@ -152,6 +153,34 @@ function ClaimScreen({ onSuccess }: { onSuccess: (email: string) => void }) {
   );
 }
 
+function QuotaModal({ open, storage }: { open: boolean; storage: StorageInfo | null }) {
+  if (!open || !storage) return null;
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)" }} />
+      <div style={{ position: "relative", width: "100%", maxWidth: 440, background: "#111113", border: "1px solid #2A2A2E", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.6)" }}>
+        <div style={{ padding: "32px 32px 24px", textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+            <AlertCircle size={28} style={{ color: "#F87171" }} />
+          </div>
+          <h2 style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 22, fontWeight: 700, color: "#F0F0F2", marginBottom: 8 }}>Storage Full</h2>
+          <p style={{ fontSize: 14, color: "#9A9AA8", lineHeight: 1.6, marginBottom: 20 }}>
+            You&apos;ve used <span style={{ color: "#F87171", fontWeight: 600 }}>{storage.usedFormatted}</span> of your <span style={{ fontWeight: 600 }}>{storage.quotaFormatted}</span> quota.
+            <br />Delete emails to free up space before you can send or receive.
+          </p>
+          <div style={{ width: "100%", height: 8, borderRadius: 4, background: "#1C1C1F", overflow: "hidden", marginBottom: 16 }}>
+            <div style={{ width: `${storage.percentage}%`, height: "100%", borderRadius: 4, background: "linear-gradient(90deg, #F87171, #EF4444)" }} />
+          </div>
+          <p style={{ fontSize: 12, color: "#636370" }}>{storage.messageCount} messages total</p>
+        </div>
+        <div style={{ padding: "16px 32px 24px", display: "flex", justifyContent: "center" }}>
+          <span style={{ fontSize: 13, color: "#636370", fontStyle: "italic" }}>Go to Trash and delete emails to continue</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ComposeModal({ open, onClose, onSent, initialTo, initialSubject, myEmail }: { open: boolean; onClose: () => void; onSent: () => void; initialTo: string; initialSubject: string; myEmail: string }) {
   const [to, setTo] = useState(initialTo);
   const [subject, setSubject] = useState(initialSubject);
@@ -159,17 +188,38 @@ function ComposeModal({ open, onClose, onSent, initialTo, initialSubject, myEmai
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [dragging, setDragging] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setTo(initialTo); setSubject(initialSubject); setBody(""); setError(""); setSent(false); }, [initialTo, initialSubject, open]);
+  useEffect(() => { setTo(initialTo); setSubject(initialSubject); setBody(""); setError(""); setSent(false); setFiles([]); }, [initialTo, initialSubject, open]);
   useEffect(() => { if (open) setTimeout(() => taRef.current?.focus(), 100); }, [open]);
   if (!open) return null;
+
+  const addFiles = (list: FileList | File[]) => {
+    const arr = Array.from(list).filter(f => f.size < 25 * 1024 * 1024);
+    setFiles(prev => [...prev, ...arr].slice(0, 10));
+  };
+
+  const removeFile = (i: number) => setFiles(prev => prev.filter((_, idx) => idx !== i));
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    setDragging(false);
+    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+  };
 
   const send = async () => {
     if (!to || !body) return;
     setSending(true); setError("");
     try {
-      const r = await fetch("/api/mail/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to, subject, text: body }) });
+      const attachments: { filename: string; content: string; contentType: string }[] = [];
+      for (const f of files) {
+        const buf = await f.arrayBuffer();
+        attachments.push({ filename: f.name, content: Buffer.from(buf).toString("base64"), contentType: f.type || "application/octet-stream" });
+      }
+      const r = await fetch("/api/mail/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to, subject, text: body, attachments: attachments.length ? attachments : undefined }) });
       const d = await r.json();
       if (d.success) { setSent(true); setTimeout(() => { onSent(); onClose(); }, 1200); } else setError(d.error || "Failed");
     } catch { setError("Connection error"); } finally { setSending(false); }
@@ -182,18 +232,31 @@ function ComposeModal({ open, onClose, onSent, initialTo, initialSubject, myEmai
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={onClose}>
       <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }} />
-      <div onClick={e => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: 640, background: "#111113", border: "1px solid #2A2A2E", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.5)" }}>
+      <div onClick={e => e.stopPropagation()} onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={e => { e.preventDefault(); setDragging(false); }} onDrop={handleDrop} style={{ position: "relative", width: "100%", maxWidth: 640, background: dragging ? "#161618" : "#111113", border: dragging ? "2px dashed #3B82F6" : "1px solid #2A2A2E", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.5)", transition: "border 200ms, background 200ms" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px", borderBottom: "1px solid #2A2A2E" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}><PenBox size={18} style={{ color: "#9A9AA8" }} /><span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 17, fontWeight: 600, color: "#F0F0F2" }}>New message</span></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}><PenBox size={18} style={{ color: "#9A9AA8" }} /><span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 17, fontWeight: 600, color: "#F0F0F2" }}>Send Email</span></div>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: "none", background: "transparent", color: "#636370", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={18} /></button>
         </div>
         <div style={row}><span style={label}>From</span><span style={{ ...field, fontFamily: "'JetBrains Mono', monospace", color: "#9A9AA8" }}>{myEmail}</span></div>
         <div style={row}><span style={label}>To</span><input type="email" placeholder="recipient@example.com" value={to} onChange={e => setTo(e.target.value)} style={{ ...field, fontFamily: "'JetBrains Mono', monospace" }} /></div>
         <div style={row}><span style={label}>Subject</span><input type="text" placeholder="Subject" value={subject} onChange={e => setSubject(e.target.value)} style={field} /></div>
         <div style={{ padding: "20px 28px" }}><textarea ref={taRef} placeholder="Write your message..." value={body} onChange={e => setBody(e.target.value)} rows={14} style={{ width: "100%", background: "transparent", border: "none", fontSize: 15, lineHeight: 1.8, color: "#F0F0F2", outline: "none", resize: "none", fontFamily: "inherit" }} /></div>
+        {files.length > 0 && (
+          <div style={{ padding: "0 28px 12px", display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {files.map((f, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)" }}>
+                <Paperclip size={12} style={{ color: "#60A5FA" }} />
+                <span style={{ fontSize: 12, color: "#9A9AA8", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+                <span style={{ fontSize: 11, color: "#636370" }}>{(f.size / 1024).toFixed(0)}KB</span>
+                <button onClick={() => removeFile(i)} style={{ background: "none", border: "none", color: "#636370", cursor: "pointer", padding: 0, display: "flex" }}><X size={12} /></button>
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 28px", borderTop: "1px solid #2A2A2E" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid #2A2A2E", background: "transparent", color: "#636370", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Paperclip size={16} /></button>
+            <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+            <button onClick={() => fileInputRef.current?.click()} style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid #2A2A2E", background: "transparent", color: "#636370", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Paperclip size={16} /></button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {error && <span style={{ fontSize: 13, color: "#F87171" }}>{error}</span>}
@@ -209,7 +272,7 @@ function ComposeModal({ open, onClose, onSent, initialTo, initialSubject, myEmai
   );
 }
 
-function UserMenu({ user, myEmail, signOut }: { user: any; myEmail: string | null; signOut: () => void }) {
+function UserMenu({ user, myEmail, signOut, isOwner }: { user: any; myEmail: string | null; signOut: () => void; isOwner: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, []);
@@ -230,6 +293,7 @@ function UserMenu({ user, myEmail, signOut }: { user: any; myEmail: string | nul
           </div>
           <div style={{ padding: 6 }}>
             <a href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", textDecoration: "none" }}><Inbox size={16} />Dashboard</a>
+            {isOwner && <a href="/dashboard/mail/admin" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#FBBF24", textDecoration: "none" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 15V8M8 8L2 4.5M8 8L14 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>Admin Panel</a>}
             <a href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", textDecoration: "none" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 4a1.25 1.25 0 110 2.5A1.25 1.25 0 018 4zm0 7.5a5 5 0 01-3.125-1.1c.025-.725 2.1-1.1 3.125-1.1s3.1.375 3.125 1.1A5 5 0 018 11.5z" fill="currentColor"/></svg>Settings</a>
             <div style={{ height: 1, background: "#2A2A2E", margin: "4px 0" }} />
             <button onClick={() => { signOut(); setOpen(false); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}><LogOut size={16} />Sign out</button>
@@ -262,6 +326,8 @@ export default function MailDashboard() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [storage, setStorage] = useState<StorageInfo | null>(null);
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
   const readerRef = useRef<HTMLDivElement>(null);
 
   const metaEmail = useMemo(() => {
@@ -296,6 +362,20 @@ export default function MailDashboard() {
   }, [folder]);
 
   useEffect(() => { if (myEmail && isLoaded) fetchEmails(); }, [myEmail, isLoaded, fetchEmails]);
+
+  const fetchStorage = useCallback(async () => {
+    try {
+      const r = await fetch("/api/mail/storage");
+      const d = await r.json();
+      if (d.used !== undefined) {
+        setStorage(d);
+        if (d.percentage >= 100 && !d.isOwner) setShowQuotaModal(true);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => { if (myEmail && isLoaded) fetchStorage(); }, [myEmail, isLoaded, fetchStorage]);
+  useEffect(() => { if (myEmail && isLoaded) { const i = setInterval(fetchStorage, 60000); return () => clearInterval(i); } }, [myEmail, isLoaded, fetchStorage]);
 
   useEffect(() => {
     if (!selId || !isLoaded || !myEmail) return;
@@ -386,13 +466,13 @@ export default function MailDashboard() {
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mail-sidebar-toggle" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: "#9A9AA8", cursor: "pointer", display: "none", alignItems: "center", justifyContent: "center" }}><Menu size={18} /></button>
           <a href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${border}`, background: "#141416", display: "flex", alignItems: "center", justifyContent: "center" }}><img src="/alione.png" alt="" style={{ width: 22, height: 22 }} /></div>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#141416", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}><img src="/alionemail.png" alt="" style={{ width: 36, height: 36, objectFit: "contain" }} /></div>
             <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 17, fontWeight: 700, color: "#636370", letterSpacing: "-0.01em" }}>AliMail</span>
           </a>
           <div style={{ width: 1, height: 24, background: border }} />
           <button onClick={() => { setComposeTo(""); setComposeSubj(""); setComposeOpen(true); }}
             style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 10, border: "none", background: "#F0F0F2", color: "#0A0A0B", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-display), sans-serif", cursor: "pointer" }}>
-            <PenBox size={16} /> Compose
+            <PenBox size={16} /> Send Email
           </button>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -400,7 +480,7 @@ export default function MailDashboard() {
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
           <div style={{ width: 1, height: 24, background: border }} />
-          <UserMenu user={user} myEmail={myEmail} signOut={signOut} />
+          <UserMenu user={user} myEmail={myEmail} signOut={signOut} isOwner={myEmail === "alione@alione.cc" || myEmail === "ali@alione.cc"} />
         </div>
       </header>
 
@@ -432,8 +512,25 @@ export default function MailDashboard() {
             })}
           </div>
           <div style={{ padding: "16px" }}>
-            <div style={{ padding: "12px 14px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, fontSize: 13, color: "#9A9AA8", lineHeight: 1.5 }}>
-              <div style={{ fontWeight: 600, color: "#60A5FA", marginBottom: 4 }}>{myEmail}</div>
+            <div style={{ padding: "14px", background: storage && storage.percentage >= 80 ? "rgba(248,113,113,0.06)" : "rgba(59,130,246,0.06)", border: `1px solid ${storage && storage.percentage >= 80 ? "rgba(248,113,113,0.15)" : "rgba(59,130,246,0.12)"}`, borderRadius: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <img src="/alionemail.png" alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />
+                <span style={{ fontFamily: "var(--font-display), sans-serif", fontSize: 13, fontWeight: 600, color: "#F0F0F2" }}>AliMail</span>
+                <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 600, color: "#636370", padding: "2px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "1px solid #2A2A2E" }}>Standard</span>
+              </div>
+              <div style={{ width: "100%", height: 6, borderRadius: 3, background: "#1C1C1F", overflow: "hidden", marginBottom: 8 }}>
+                <div style={{ width: `${storage ? storage.percentage : 0}%`, height: "100%", borderRadius: 3, background: storage && storage.percentage >= 80 ? "linear-gradient(90deg, #F87171, #EF4444)" : storage && storage.percentage >= 60 ? "linear-gradient(90deg, #FBBF24, #F59E0B)" : "linear-gradient(90deg, #3B82F6, #60A5FA)", transition: "width 500ms ease" }} />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 12, color: storage && storage.percentage >= 80 ? "#F87171" : "#636370" }}>{storage ? `${storage.usedFormatted} / ${storage.quotaFormatted}` : "Loading..."}</span>
+                {storage && storage.isOwner && <span style={{ fontSize: 11, color: "#34D399", fontWeight: 600 }}>Unlimited</span>}
+              </div>
+              {storage && storage.percentage >= 80 && !storage.isOwner && (
+                <p style={{ fontSize: 11, color: "#F87171", marginTop: 6, lineHeight: 1.4 }}>{storage.percentage >= 100 ? "Storage full — delete emails to continue" : "Running low — free up space soon"}</p>
+              )}
+            </div>
+            <div style={{ marginTop: 10, padding: "10px 14px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, fontSize: 13, color: "#9A9AA8", lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 600, color: "#60A5FA", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>{myEmail}</div>
               <div style={{ fontSize: 12, color: "#636370" }}>AliOne Mail</div>
             </div>
           </div>
@@ -494,7 +591,7 @@ export default function MailDashboard() {
                 <p style={{ fontSize: 13, color: "#3D3D42", marginTop: 4 }}>{searchQ ? "No matches found" : folder === "inbox" ? "Your inbox is empty" : folder === "trash" ? "Trash is empty" : "Nothing here yet"}</p>
                 {!searchQ && folder === "inbox" && (
                   <button onClick={() => { setComposeTo(""); setComposeSubj(""); setComposeOpen(true); }}
-                    style={{ marginTop: 20, padding: "10px 24px", borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: "#9A9AA8", fontSize: 13, cursor: "pointer" }}>Compose</button>
+                    style={{ marginTop: 20, padding: "10px 24px", borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: "#9A9AA8", fontSize: 13, cursor: "pointer" }}>Send Email</button>
                 )}
               </div>
             ) : (
@@ -568,6 +665,7 @@ export default function MailDashboard() {
       </div>
 
       <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} onSent={() => { if (folder === "sent") fetchEmails(); }} initialTo={composeTo} initialSubject={composeSubj} myEmail={myEmail || ""} />
+      <QuotaModal open={showQuotaModal} storage={storage} />
     </div>
   );
 }

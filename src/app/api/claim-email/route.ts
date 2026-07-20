@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     const senderPass = senderMeta.claimedPassword as string;
 
     await client.users.updateUser(userId, {
-      publicMetadata: { claimedEmail: email, claimedPassword: password },
+      publicMetadata: { claimedEmail: email, claimedPassword: password, storageQuota: 5 * 1024 * 1024 * 1024 },
     });
 
     sendWelcomeEmail(senderEmail || email, senderPass || password, email).catch(() => {});
