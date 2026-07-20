@@ -209,15 +209,23 @@ function UserMenu({ user, myEmail, signOut }: { user: any; myEmail: string | nul
   useEffect(() => { const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, []);
   const name = user?.fullName || myEmail?.split("@")[0] || "User";
   const initial = name[0].toUpperCase();
+  const imageUrl = user?.imageUrl;
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <button onClick={() => setOpen(!open)} style={{ width: 38, height: 38, borderRadius: 12, background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.04))", border: "1px solid #2A2A2E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, color: "#9A9AA8", cursor: "pointer", fontFamily: "var(--font-display), sans-serif" }}>{initial}</button>
+      <button onClick={() => setOpen(!open)} style={{ width: 38, height: 38, borderRadius: 12, background: imageUrl ? "transparent" : "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.04))", border: imageUrl ? "none" : "1px solid #2A2A2E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, color: "#9A9AA8", cursor: "pointer", fontFamily: "var(--font-display), sans-serif", overflow: "hidden", padding: 0 }}>
+        {imageUrl ? <img src={imageUrl} alt="" style={{ width: 38, height: 38, borderRadius: 12, objectFit: "cover" }} /> : initial}
+      </button>
       {open && (
         <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 8, width: 260, background: "#141416", border: "1px solid #2A2A2E", borderRadius: 16, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)", zIndex: 200 }}>
-          <div style={{ padding: "18px 20px", borderBottom: "1px solid #2A2A2E" }}><div style={{ fontSize: 15, fontWeight: 500, color: "#F0F0F2", marginBottom: 4 }}>{name}</div><div style={{ fontSize: 13, color: "#636370", fontFamily: "'JetBrains Mono', monospace" }}>{myEmail || "No email"}</div></div>
+          <div style={{ padding: "18px 20px", borderBottom: "1px solid #2A2A2E", display: "flex", alignItems: "center", gap: 12 }}>
+            {imageUrl ? <img src={imageUrl} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover" }} /> : <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.04))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 600, color: "#9A9AA8", border: "1px solid #2A2A2E" }}>{initial}</div>}
+            <div><div style={{ fontSize: 15, fontWeight: 500, color: "#F0F0F2", marginBottom: 4 }}>{name}</div><div style={{ fontSize: 13, color: "#636370", fontFamily: "'JetBrains Mono', monospace" }}>{myEmail || "No email"}</div></div>
+          </div>
           <div style={{ padding: 6 }}>
             <a href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", textDecoration: "none" }}><Inbox size={16} />Dashboard</a>
+            <a href="https://dashboard.clerk.com" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", textDecoration: "none" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 4a1.25 1.25 0 110 2.5A1.25 1.25 0 018 4zm0 7.5a5 5 0 01-3.125-1.1c.025-.725 2.1-1.1 3.125-1.1s3.1.375 3.125 1.1A5 5 0 018 11.5z" fill="currentColor"/></svg>Settings</a>
+            <div style={{ height: 1, background: "#2A2A2E", margin: "4px 0" }} />
             <button onClick={() => { signOut(); setOpen(false); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, fontSize: 14, color: "#9A9AA8", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}><LogOut size={16} />Sign out</button>
           </div>
         </div>

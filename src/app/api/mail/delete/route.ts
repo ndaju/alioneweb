@@ -36,9 +36,9 @@ export async function POST(req: Request) {
 
     try {
       if (!permanent) {
-        await imap.messageCopy(uids, "Trash");
+        await imap.messageCopy(uids, "Trash", { uid: true });
       }
-      await imap.messageFlagsAdd(uids, ["\\Deleted"]);
+      await imap.messageFlagsAdd(uids, ["\\Deleted"], { uid: true });
       await imap.mailboxClose();
     } finally {
       lock.release();

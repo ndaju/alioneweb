@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         }
         // Mark all as deleted and expunge
         if (uids.length > 0) {
-          await imap.messageFlagsAdd(uids, ["\\Deleted"]);
+          await imap.messageFlagsAdd(uids, ["\\Deleted"], { uid: true });
           await imap.mailboxClose();
         }
       } finally {

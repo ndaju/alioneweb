@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       publicMetadata: { claimedEmail: email, claimedPassword: password },
     });
 
-    sendWelcomeEmail(senderEmail || email, senderPass || password, email);
+    sendWelcomeEmail(senderEmail || email, senderPass || password, email).catch(() => {});
 
     return Response.json({ success: true, email });
   } catch (err: any) {
